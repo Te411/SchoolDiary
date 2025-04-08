@@ -17,10 +17,12 @@ namespace MyWebApplicationServer.Controllers
     public class UsersController : Controller
     {
         private readonly LibraryContext _context;
+        private readonly ILogger<UsersController> _logger;
 
-        public UsersController(LibraryContext context)
+        public UsersController(LibraryContext context, ILogger<UsersController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         /// <summary>
@@ -28,7 +30,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Users>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             return await _context.Users.ToListAsync();
         }
@@ -39,7 +41,7 @@ namespace MyWebApplicationServer.Controllers
         /// <param name="login"></param>
         /// <returns></returns>
         [HttpGet("{login}")]
-        public async Task<ActionResult<Users>> GetUserByLogin([FromRoute] string login)
+        public async Task<ActionResult<User>> GetUserByLogin([FromRoute] string login)
         {
             var users = await _context.Users
                 .FirstOrDefaultAsync(bg => bg.Login == login);
@@ -55,6 +57,20 @@ namespace MyWebApplicationServer.Controllers
         [HttpPost("authenticate")]
         public async Task<ActionResult> AuthenticateUser([FromBody] LoginRequest request)
         {
+            //try
+            //{
+            //    _logger.LogInformation("Аутентификация пользователя: {Login}", request.Login);
+
+            //}
+            //catch(Exception ex)
+            //{
+            //    _logger.LogError(ex, "Ошибка аутентификации: {Login}", request.Login);
+            //    return StatusCode(500, new { Success = false, Error = "Внутренняя ошибка сервера" });
+            //}
+
+
+
+            _logger.LogInformation("Аутентификация пользователя: {Login}", request.Login);
             if (string.IsNullOrEmpty(request.Login) || string.IsNullOrEmpty(request.Password))
             {
                 return BadRequest("Логин и пароль обязательны");
