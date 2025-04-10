@@ -20,6 +20,7 @@ namespace Project.MyWebApplicationServer.Models
         /// Электронная почта
         /// </summary>
         [Required]
+        [EmailAddress]
         [MaxLength(255)]
         public string Email { get; set; }
 

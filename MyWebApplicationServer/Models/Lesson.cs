@@ -18,22 +18,26 @@ namespace Project.MyWebApplicationServer.Models
         /// <summary>
         /// Уникальный индентификатор предмета
         /// </summary>
+        [Required]
         public Guid SubjectId { get; set; }
 
         /// <summary>
         /// Уникальный индентификатор учителя
         /// </summary>
+        [Required]
         public Guid TeacherId { get; set; }
 
         /// <summary>
-        /// Уникальный индентификатор класса
+        /// Начало урока
         /// </summary>
-        public Guid ClassId { get; set; }
+        [Required]
+        public TimeSpan StartTime { get; set; }
 
         /// <summary>
-        /// Дата
+        /// Конец урока
         /// </summary>
-        public DateTime Date { get; set; }
+        [Required]
+        public TimeSpan EndTime { get; set; }
 
         /// <summary>
         /// Домашнее задание
@@ -58,11 +62,5 @@ namespace Project.MyWebApplicationServer.Models
         /// </summary>
         [ForeignKey("TeacherId")]
         public virtual Teacher Teacher { get; set; }
-
-        /// <summary>
-        /// Класс
-        /// </summary>
-        [ForeignKey("ClassId")]
-        public virtual Class Class { get; set; }
     }
 }
