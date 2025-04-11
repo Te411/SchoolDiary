@@ -54,6 +54,11 @@ namespace MyWebApplicationServer.Controllers
             return users;
         }
 
+        /// <summary>
+        /// GET: api/Users/Login
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("authenticate")]
         public async Task<ActionResult> AuthenticateUser([FromBody] LoginRequest request)
         {
@@ -71,6 +76,7 @@ namespace MyWebApplicationServer.Controllers
 
 
             _logger.LogInformation("Аутентификация пользователя: {Login}", request.Login);
+
             if (string.IsNullOrEmpty(request.Login) || string.IsNullOrEmpty(request.Password))
             {
                 return BadRequest("Логин и пароль обязательны");

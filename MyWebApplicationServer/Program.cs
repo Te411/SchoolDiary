@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
+using System.Reflection;
 
 namespace Project.MyWebApplicationServer
 {
@@ -34,7 +35,15 @@ namespace Project.MyWebApplicationServer
                             opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            //builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "¬ас тут не должно быть :/",
+                });
+            
+            });
 
             var app = builder.Build();
 
