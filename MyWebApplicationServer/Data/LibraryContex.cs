@@ -17,7 +17,7 @@ namespace MyWebApplicationServer.Data
         /// <summary>
         /// Таблица - "Роль"
         /// </summary>
-        public DbSet<Role> Roles { get; set; }
+        public DbSet<Role> Role { get; set; }
 
         /// <summary>
         /// Связь-таблица - "роль-пользователь"
@@ -27,27 +27,27 @@ namespace MyWebApplicationServer.Data
         /// <summary>
         /// Таблица - "Завуч"
         /// </summary>
-        public DbSet<Zavuch> Zavuches { get; set; }
+        public DbSet<Zavuch> Zavuch { get; set; }
 
         /// <summary>
         /// Таблица - "Студент"
         /// </summary>
-        public DbSet<Student> Students { get; set; }
+        public DbSet<Student> Student { get; set; }
 
         /// <summary>
         /// Таблица - "Учитель"
         /// </summary>
-        public DbSet<Teacher> Teachers { get; set; }
+        public DbSet<Teacher> Teacher { get; set; }
 
         /// <summary>
         /// Таблица - "Класс"
         /// </summary>
-        public DbSet<Class> Classes { get; set; }
+        public DbSet<Class> Class { get; set; }
 
         /// <summary>
         /// Таблица - "Предмет"
         /// </summary>
-        public DbSet<Subject> Subjects { get; set; }
+        public DbSet<Subject> Subject { get; set; }
 
         /// <summary>
         /// Связь - Таблица - "Предмет - класс"
@@ -57,22 +57,22 @@ namespace MyWebApplicationServer.Data
         /// <summary>
         /// Таблица - "Журнал"
         /// </summary>
-        public DbSet<GradeJournal> GradeJournals { get; set; }
+        public DbSet<GradeJournal> GradeJournal { get; set; }
 
         /// <summary>
         /// Таблица - "Урок"
         /// </summary>
-        public DbSet<Lesson> Lessons { get; set; }
+        public DbSet<Lesson> Lesson { get; set; }
 
         /// <summary>
         /// Таблица - "Расписание"
         /// </summary>
-        public DbSet<Schedule> Schedules { get; set; }
+        public DbSet<Schedule> Schedule { get; set; }
 
         /// <summary>
         /// Таблица - "День недели"
         /// </summary>
-        public DbSet<WeekDay> WeekDays { get; set; }
+        public DbSet<WeekDay> WeekDay { get; set; }
 
         /// <summary>
 		/// Конфигурационный файл
