@@ -60,6 +60,8 @@ namespace MyWebApplicationServer.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("authenticate")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> AuthenticateUser([FromBody] LoginRequest request)
         {
             //try

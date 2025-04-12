@@ -9,6 +9,7 @@ using MyWebApplicationServer.Data;
 using Project.MyWebApplicationServer.Models;
 using MyWebApplicationServer.DTO.Schedule;
 using MyWebApplicationServer.DTO.Lesson;
+using Humanizer;
 
 namespace MyWebApplicationServer.Controllers
 {
@@ -109,7 +110,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/ByClassName/Correct/Schedules/5
+        /// GET: api/Schedules/ByClassName/Correct/Schedules/5
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
@@ -138,7 +139,7 @@ namespace MyWebApplicationServer.Controllers
                 .Select(g => new ScheduleDto
                 {
                     WeekDayName = g.Key.Name,
-                    Lessons = g.Select(s => new LessonDto
+                    Lessons = g.Select(s => new LessonForScheduleDto
                     {
                         LessonOrder = s.LessonOrder,
                         SubjectName = s.Lesson.Subject.Name,
@@ -152,6 +153,64 @@ namespace MyWebApplicationServer.Controllers
                 .ToList();
 
             return result;
+        }
+
+        /// <summary>
+        /// PUT: api/Schedules/UpdateHomeworkByClassName
+        /// </summary>
+        /// <param name="addHomeworkDto"></param>
+        /// <returns></returns>
+        [HttpPatch("UpdateHomeworkByClassName")]
+        public async Task<IActionResult> UpdateHomework([FromBody] AddHomeworkScheduleDto addHomeworkDto)
+        {
+            try
+            {
+                var classEntity = await _context.Class
+                    .FirstOrDefaultAsync(c => c.Name == addHomeworkDto.ClassName);
+
+                if (classEntity == null)
+                {
+                    return NotFound($"Класс с именем '{addHomeworkDto.ClassName}' не найден");
+                }
+
+                var schedule = await _context.Schedule
+                    .FirstOrDefaultAsync(s =>
+                    s.ClassId == classEntity.ClassId &&
+                    s.WeekDayId == addHomeworkDto.WeekDayId &&
+                    s.LessonOrder == addHomeworkDto.LessonOrder);
+
+                if (schedule == null)
+                {
+                    return NotFound("Запись в расписании не найдена");
+                }
+
+                var lesson = await _context.Lesson.FindAsync(schedule.LessonId);
+                if (lesson == null)
+                {
+                    return NotFound("Урок не найден");
+                }
+
+                lesson.Homework = addHomeworkDto.Homework;
+
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new 
+                { 
+                    Message = "Ошибка при обновлении данных",
+                    Details = ex.Message 
+                });
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new 
+                { 
+                    Message = "Непредвиденная ошибка", 
+                    Details = ex.Message 
+                });
+            }
         }
     }
 }
