@@ -12,6 +12,6 @@ namespace MyWebApplicationServer.DTO.Schedule
         /// <summary>
         /// Список уроков
         /// </summary>
-        public List<LessonDto> Lessons { get; set; }
+        public List<LessonForScheduleDto> Lessons { get; set; }
     }
 }

@@ -1,21 +1,24 @@
-﻿namespace MyWebApplicationServer.DTO.Lesson
+﻿using MyWebApplicationServer.DTO.Subject;
+using MyWebApplicationServer.DTO.Teacher;
+
+namespace MyWebApplicationServer.DTO.Lesson
 {
     public class LessonDto
     {
         /// <summary>
-        /// Порядок урока
+        /// Уникальный индентификатор урока
         /// </summary>
-        public int LessonOrder { get; set; }
+        public Guid LessonId { get; set; }
 
         /// <summary>
-        /// Название предмета
+        /// Уникальный индентификатор предмета
         /// </summary>
-        public string SubjectName { get; set; }
+        public Guid SubjectId { get; set; }
 
         /// <summary>
-        /// Учитель
+        /// Уникальный индентификатор учителя
         /// </summary>
-        public string TeacherName { get; set; }
+        public Guid TeacherId { get; set; }
 
         /// <summary>
         /// Начало урока
@@ -26,7 +29,7 @@
         /// Конец урока
         /// </summary>
         public TimeSpan EndTime { get; set; }
-
+        
         /// <summary>
         /// Домашнее задание
         /// </summary>
@@ -36,5 +39,15 @@
         /// Кабинет
         /// </summary>
         public string Room { get; set; }
+
+        /// <summary>
+        /// Предмет
+        /// </summary>
+        public SubjectForLessonDto Subject { get; set; }
+
+        /// <summary>
+        /// Учитель
+        /// </summary>
+        public TeacherForLessonDto Teacher { get; set; }
     }
 }

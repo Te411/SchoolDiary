@@ -55,9 +55,9 @@ namespace MyWebApplicationServer.Data
         public DbSet<SubjectClasses> SubjectClasses { get; set; }
 
         /// <summary>
-        /// Таблица - "Журнал"
+        /// Таблица - "Оценка"
         /// </summary>
-        public DbSet<GradeJournal> GradeJournal { get; set; }
+        public DbSet<Grade> Grade { get; set; }
 
         /// <summary>
         /// Таблица - "Урок"
@@ -192,18 +192,18 @@ namespace MyWebApplicationServer.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            modelBuilder.Entity<GradeJournal>(entity =>
+            modelBuilder.Entity<Grade>(entity =>
             {
-                entity.HasKey(gj => gj.GradeJournalId);
-                entity.HasOne(gj => gj.Lesson)
+                entity.HasKey(g => g.GradeId);
+                entity.HasOne(g => g.Subject)
                     .WithMany()
-                    .HasForeignKey(gj => gj.LessonId)
+                    .HasForeignKey(g => g.SubjectId)
                     .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(gj => gj.Student)
+                entity.HasOne(g => g.Student)
                     .WithMany()
-                    .HasForeignKey(gj => gj.StudentId)
+                    .HasForeignKey(g => g.StudentId)
                     .OnDelete(DeleteBehavior.Cascade);
-                entity.Property(gj => gj.Grade)
+                entity.Property(g => g.Value)
                     .HasAnnotation("Range", new[] { 1, 5 });
             });
 

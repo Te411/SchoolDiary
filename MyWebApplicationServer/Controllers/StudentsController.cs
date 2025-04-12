@@ -28,13 +28,13 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<StudentDtoForRole>>> GetStudent()
+        public async Task<ActionResult<IEnumerable<StudentForRoleDto>>> GetStudent()
         {
 
             return await _context.Student
                 .Include(s => s.Class)
                 .Include(s => s.User)
-                .Select(s => new StudentDtoForRole
+                .Select(s => new StudentForRoleDto
                 {
                     StudentId = s.StudentId,
                     ClassId = s.ClassId,
