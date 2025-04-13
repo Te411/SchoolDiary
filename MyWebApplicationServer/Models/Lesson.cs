@@ -43,13 +43,13 @@ namespace Project.MyWebApplicationServer.Models
         /// Домашнее задание
         /// </summary>
         [MaxLength(255)]
-        public string Homework { get; set; }
+        public string? Homework { get; set; }
 
         /// <summary>
         /// Кабинет
         /// </summary>
         [MaxLength(10)]
-        public string Room { get; set; }
+        public string? Room { get; set; }
 
         /// <summary>
         /// Предмет
