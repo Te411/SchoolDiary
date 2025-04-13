@@ -1,21 +1,26 @@
 ﻿namespace MyWebApplicationServer.DTO.Lesson
 {
-    public class LessonForScheduleDto
+    public class NewLessonForAddScheduleDto
     {
         /// <summary>
-        /// Порядок урока
+        /// Уникальный индентификатор дня недели
+        /// </summary>
+        public int WeekDayId { get; set; }
+
+        /// <summary>
+        /// Порядковый номер урока
         /// </summary>
         public int LessonOrder { get; set; }
 
         /// <summary>
-        /// Название предмета
+        /// Уникальный идентификатор предмета
         /// </summary>
         public string SubjectName { get; set; }
 
         /// <summary>
-        /// Учитель
+        /// Уникальный идентификатор учителя
         /// </summary>
-        public string TeacherName { get; set; }
+        public Guid TeacherId { get; set; }
 
         /// <summary>
         /// Начало урока
