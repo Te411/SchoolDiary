@@ -42,7 +42,11 @@ namespace Project.MyWebApplicationServer
                 {
                     Title = "¬ас тут не должно быть :/",
                 });
-            
+
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                c.IncludeXmlComments(xmlPath);
+
             });
 
             var app = builder.Build();

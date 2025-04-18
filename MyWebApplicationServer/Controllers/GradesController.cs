@@ -25,7 +25,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Grades
+        /// Получить все существующие оценки
         /// </summary>
         /// <returns></returns>
         [HttpGet]
@@ -50,9 +50,9 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Grades/5
+        /// Получить оценку по id
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="id">id Оценки</param>
         /// <returns></returns>
         [HttpGet("id/{id}")]
         public async Task<ActionResult<IEnumerable<GradeDto>>> GetGrade(Guid id)
@@ -84,9 +84,9 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Grades/5
+        /// Получить все оценки по названию предмета
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="subjectName">Название предмета</param>
         /// <returns></returns>
         [HttpGet("subjectName/{subjectName}")]
         public async Task<ActionResult<IEnumerable<GradeDto>>> GetGrade(string subjectName)
@@ -118,66 +118,33 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// PUT: api/Grades/5
+        /// Добавление новой оценки
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="grade"></param>
-        /// <returns></returns>
-       //[HttpPut("{id}")]
-       //public async Task<IActionResult> PutGrade(Guid id, Grade grade)
-       //{
-       //    if (id != grade.GradeId)
-       //    {
-       //        return BadRequest();
-       //    }
-       //
-       //    _context.Entry(grade).State = EntityState.Modified;
-       //
-       //    try
-       //    {
-       //        await _context.SaveChangesAsync();
-       //    }
-       //    catch (DbUpdateConcurrencyException)
-       //    {
-       //        if (!GradeExists(id))
-       //        {
-       //            return NotFound();
-       //        }
-       //        else
-       //        {
-       //            throw;
-       //        }
-       //    }
-       //
-       //    return NoContent();
-       //}
-
-        /// <summary>
-        /// POST: api/Grades
-        /// </summary>
-        /// <param name="grade"></param>
+        /// <param name="createGradeDto"></param>
         /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult<GradeDto>> PostGrade(CreateGradeDto createGradeDto)
         {
-            var subjectExists = await _context.Subject.AnyAsync(s => s.SubjectId == createGradeDto.SubjectId);
+            var subjectExists = await _context.Subject
+                .FirstOrDefaultAsync(s => s.Name == createGradeDto.SubjectName);
 
-            if (!subjectExists)
+            if (subjectExists == null)
             {
                 return BadRequest("Указанный предмет не существует");
             }
 
-            var studentExists = await _context.Student.AnyAsync(s => s.StudentId == createGradeDto.StudentId);
+            var studentExists = await _context.Student
+                .FirstOrDefaultAsync(s => s.User.Name == createGradeDto.StudentName);
 
-            if (!studentExists)
+            if (studentExists == null)
             {
                 return BadRequest("Указанный студент не существует");
             }
 
             var grade = new Grade
             {
-                SubjectId = createGradeDto.SubjectId,
-                StudentId = createGradeDto.StudentId,
+                SubjectId = subjectExists.SubjectId,
+                StudentId = studentExists.StudentId,
                 Value = createGradeDto.Value,
                 Data = createGradeDto.Data
             };
@@ -207,28 +174,91 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// DELETE: api/Grades/5
+        /// Получить все оценки по названию предмета и класса
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="gradeAllStudent"></param>
         /// <returns></returns>
-        // [HttpDelete("{id}")]
-        // public async Task<IActionResult> DeleteGrade(Guid id)
-        // {
-        //     var grade = await _context.Grade.FindAsync(id);
-        //     if (grade == null)
-        //     {
-        //         return NotFound();
-        //     }
-        //
-        //     _context.Grade.Remove(grade);
-        //     await _context.SaveChangesAsync();
-        //
-        //     return NoContent();
-        // }
-
-        private bool GradeExists(Guid id)
+        [HttpPost("GradeAllStudentByClassSubject/")]
+        public async Task<ActionResult<IEnumerable<GradeDto>>> GetGradeAllStudentByClassSubject(GradeByClassSubjectDto gradeAllStudent)
         {
-            return _context.Grade.Any(e => e.GradeId == id);
+            var grade = await _context.Grade
+                .Where(g => g.SubjectId == gradeAllStudent.SubjectId && g.Student.ClassId == gradeAllStudent.ClassId)
+                .Include(g => g.Student)
+                    .ThenInclude(s => s.User)
+                .Include(g => g.Subject)
+                .Select(g => new GradeDto
+                {
+                    GradeId = g.GradeId,
+                    Value = g.Value,
+                    Data = g.Data,
+                    Student = new StudentForGradeDto
+                    {
+                        StudentId = g.Student.StudentId,
+                        Name = g.Student.User.Name,
+                    }
+                })
+                .ToListAsync();
+
+            if (grade == null)
+            {
+                return NotFound();
+            }
+
+            return grade;
+        }
+
+        /// <summary>
+        /// Получить все оценки по id студента
+        /// </summary>
+        /// <param name="StudentId">id студента</param>
+        /// <returns></returns>
+        [HttpGet("StudentId/{StudentId}")]
+        public async Task<ActionResult<IEnumerable<GradeDto>>> GetGradeByStudentId(Guid StudentId)
+        {
+            var grade = await _context.Grade
+                .Where(g => g.StudentId == StudentId)
+                .Include(g => g.Subject)
+                .Include(g => g.Student)
+                    .ThenInclude(s => s.User)
+                .Select(g => new GradeDto
+                {
+                    GradeId = g.GradeId,
+                    Value = g.Value,
+                    Data = g.Data,
+                    Student = new StudentForGradeDto
+                    {
+                        StudentId = g.Student.StudentId,
+                        Name = g.Student.User.Name,
+                    }
+                })
+                .ToListAsync();
+
+            if (grade == null)
+            {
+                return NotFound();
+            }
+
+            return grade;
+        }
+
+        /// <summary>
+        /// Удалить оценку по ее id
+        /// </summary>
+        /// <param name="id">id оценки</param>
+        /// <returns></returns>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteGrade(Guid id)
+        {
+            var grade = await _context.Grade.FindAsync(id);
+            if (grade == null)
+            {
+                return NotFound();
+            }
+        
+            _context.Grade.Remove(grade);
+            await _context.SaveChangesAsync();
+        
+            return NoContent();
         }
     }
 }

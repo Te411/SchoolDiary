@@ -25,11 +25,11 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Schedules
+        /// Получить все расписания
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Schedule>>> GetSchedule()
+        public async Task<ActionResult<IEnumerable<ScheduleDto>>> GetSchedule()
         {
             var schedule = await _context.Schedule
                 .Include(s => s.Class)
@@ -48,16 +48,34 @@ namespace MyWebApplicationServer.Controllers
                 return NotFound();
             }
 
-            return schedule;
+            var result = schedule
+                .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name, s.Class.ClassId})
+                .Select(g => new ScheduleDto
+                {
+                    WeekDayName = g.Key.Name,     
+                    Lessons = g.Select(s => new LessonForScheduleDto
+                    {
+                        LessonOrder = s.LessonOrder,
+                        SubjectName = s.Lesson.Subject.Name,
+                        TeacherName = s.Lesson.Teacher.User.Name,
+                        StartTime = s.Lesson.StartTime,
+                        EndTime = s.Lesson.EndTime,
+                        Homework = s.Lesson.Homework ?? null,
+                        Room = s.Lesson.Room?.Trim()
+                    }).ToList()
+                })
+                .ToList();
+
+            return result;
         }
 
         /// <summary>
-        /// GET: api/ByClassId/Schedules/5
+        /// Получить расписание по id класса
         /// </summary>
         /// <param name="classId"></param>
         /// <returns></returns>
         [HttpGet("ByClassId/{classId}")]
-        public async Task<ActionResult<IEnumerable<Schedule>>> GetSchedule(Guid classId)
+        public async Task<ActionResult<List<ScheduleDto>>> GetSchedule(Guid classId)
         {
             var schedule = await _context.Schedule
                 .Where(s => s.ClassId == classId)
@@ -77,40 +95,59 @@ namespace MyWebApplicationServer.Controllers
                 return NotFound();
             }
 
-            return schedule;
+            var result = schedule
+                .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
+                .Select(g => new ScheduleDto
+                {
+                    WeekDayName = g.Key.Name,
+                    Lessons = g.Select(s => new LessonForScheduleDto
+                    {
+                        LessonOrder = s.LessonOrder,
+                        SubjectName = s.Lesson.Subject.Name,
+                        TeacherName = s.Lesson.Teacher.User.Name,
+                        StartTime = s.Lesson.StartTime,
+                        EndTime = s.Lesson.EndTime,
+                        Homework = s.Lesson.Homework ?? null,
+                        Room = s.Lesson.Room?.Trim()
+                    }).ToList()
+                })
+                .ToList();
+
+            return result;
         }
 
+        ///// <summary>
+        ///// GET: api/ByClassName/Schedules/5
+        ///// Получить расписание по имени класса
+        ///// </summary>
+        ///// <param name="className"></param>
+        ///// <returns></returns>
+        //[HttpGet("ByClassName/{className}")]
+        //public async Task<ActionResult<IEnumerable<Schedule>>> GetSchedule(string className)
+        //{
+        //    var schedule = await _context.Schedule
+        //        .Where(s => s.Class.Name == className)
+        //        .Include(s => s.Class)
+        //        .Include(s => s.WeekDay)
+        //        .Include(s => s.Lesson)
+        //            .ThenInclude(l => l.Subject)
+        //        .Include(s => s.Lesson)
+        //            .ThenInclude(l => l.Teacher)
+        //                .ThenInclude(t => t.User)
+        //        .OrderBy(s => s.WeekDayId)
+        //        .ThenBy(s => s.LessonOrder)
+        //        .ToListAsync();
+
+        //    if (schedule == null || !schedule.Any())
+        //    {
+        //        return NotFound();
+        //    }
+
+        //    return schedule;
+        //}
+
         /// <summary>
-        /// GET: api/ByClassName/Schedules/5
-        /// </summary>
-        /// <param name="className"></param>
-        /// <returns></returns>
-        [HttpGet("ByClassName/{className}")]
-        public async Task<ActionResult<IEnumerable<Schedule>>> GetSchedule(string className)
-        {
-            var schedule = await _context.Schedule
-                .Where(s => s.Class.Name == className)
-                .Include(s => s.Class)
-                .Include(s => s.WeekDay)
-                .Include(s => s.Lesson)
-                    .ThenInclude(l => l.Subject)
-                .Include(s => s.Lesson)
-                    .ThenInclude(l => l.Teacher)
-                        .ThenInclude(t => t.User)
-                .OrderBy(s => s.WeekDayId)
-                .ThenBy(s => s.LessonOrder)
-                .ToListAsync();
-
-            if (schedule == null || !schedule.Any())
-            {
-                return NotFound();
-            }
-
-            return schedule;
-        }
-
-        /// <summary>
-        /// GET: api/Schedules/ByClassName/Correct/Schedules/5
+        /// Получить расписание по имени класса
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
@@ -156,7 +193,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// PUT: api/Schedules/UpdateHomeworkByClassName
+        /// Обновить домашнее задание урока по данным расписания
         /// </summary>
         /// <param name="addHomeworkDto"></param>
         /// <returns></returns>
@@ -227,7 +264,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// POST: api/Schedules/WithOldLessons
+        /// Добавление расписания из существующих уроков
         /// </summary>
         /// <param name="addScheduleDto"></param>
         /// <returns></returns>
@@ -395,7 +432,7 @@ namespace MyWebApplicationServer.Controllers
         }
        
         /// <summary>
-        /// POST: api/Schedules/WithNewLessons
+        /// Добавление расписания с созданием новых уроков
         /// </summary>
         /// <param name="addScheduleDto"></param>
         /// <returns></returns>

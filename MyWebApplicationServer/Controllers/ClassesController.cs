@@ -22,7 +22,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Classes
+        /// Получить все классы
         /// </summary>
         /// <returns></returns>
         [HttpGet]
