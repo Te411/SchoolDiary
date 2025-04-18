@@ -27,6 +27,7 @@ namespace MyWebApplicationServer.Controllers
 
         /// <summary>
         /// GET: api/Users
+        /// Получить всех пользователей
         /// </summary>
         /// <returns></returns>
         [HttpGet]
@@ -36,49 +37,15 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Users/Login
+        /// Авторизация
         /// </summary>
-        /// <param name="login"></param>
-        /// <returns></returns>
-        [HttpGet("{login}")]
-        public async Task<ActionResult<User>> GetUserByLogin([FromRoute] string login)
-        {
-            var users = await _context.Users
-                .FirstOrDefaultAsync(bg => bg.Login == login);
-
-            if (users == null)
-            {
-                return NotFound();
-            }
-
-            return users;
-        }
-
-        /// <summary>
-        /// GET: api/Users/Login
-        /// </summary>
-        /// <param name="request"></param>
+        /// <param name="request">Запрос на авторизацию с учетными данными пользователя.</param>
         /// <returns></returns>
         [HttpPost("authenticate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> AuthenticateUser([FromBody] LoginRequest request)
         {
-            //try
-            //{
-            //    _logger.LogInformation("Аутентификация пользователя: {Login}", request.Login);
-
-            //}
-            //catch(Exception ex)
-            //{
-            //    _logger.LogError(ex, "Ошибка аутентификации: {Login}", request.Login);
-            //    return StatusCode(500, new { Success = false, Error = "Внутренняя ошибка сервера" });
-            //}
-
-
-
-            _logger.LogInformation("Аутентификация пользователя: {Login}", request.Login);
-
             if (string.IsNullOrEmpty(request.Login) || string.IsNullOrEmpty(request.Password))
             {
                 return BadRequest("Логин и пароль обязательны");
@@ -96,11 +63,21 @@ namespace MyWebApplicationServer.Controllers
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
+            var student = await _context.Student
+                .Include(s => s.Class)
+                .FirstOrDefaultAsync(s => s.UserId == user.UserId);
+
+            Guid? classId = null;
+            if (student != null)
+            {
+                classId = student.ClassId;
+            }
+
             return Ok(new
             {
                 Message = "Пользователь успешно аутентифицирован",
-                Name = user.Name,
-                Email = user.Email
+                UserId = user.UserId,
+                classId = classId
             });
         }
     }

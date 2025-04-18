@@ -22,7 +22,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Role
+        /// Получить все роли
         /// </summary>
         /// <returns></returns>
         [HttpGet]
@@ -32,7 +32,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Role/5
+        /// Получить роль по id
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -50,7 +50,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// POST: api/Roles
+        /// Добавить новую роль
         /// </summary>
         /// <param name="role"></param>
         /// <returns></returns>

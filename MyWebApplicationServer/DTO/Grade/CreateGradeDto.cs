@@ -8,13 +8,13 @@ namespace MyWebApplicationServer.DTO.Grade
         /// Уникальный идентификатор предмета
         /// </summary>
         [Required]
-        public Guid SubjectId { get; set; }
+        public string SubjectName { get; set; }
 
         /// <summary>
         /// Уникальный идентификатор студента
         /// </summary>
         [Required]
-        public Guid StudentId { get; set; }
+        public string StudentName { get; set; }
 
         /// <summary>
         /// Оценка (1-5)

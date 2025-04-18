@@ -24,7 +24,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Students
+        /// Получить всех студентов
         /// </summary>
         /// <returns></returns>
         [HttpGet]
@@ -53,7 +53,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Students/5
+        /// Получить студента по id
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -71,7 +71,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// POST: api/Students
+        /// Добавить нового студента
         /// </summary>
         /// <param name="student"></param>
         /// <returns></returns>
@@ -85,7 +85,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// DELETE: api/Students/5
+        /// Удалить студента
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -102,6 +102,34 @@ namespace MyWebApplicationServer.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Получить общую информацию о студенте
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("GeneralInfo/{id}")]
+        public async Task<ActionResult<IEnumerable<StudentGeneralInfo>>> GetGeneralInfoStudent(Guid id)
+        {
+            var student = await _context.Student
+                .Where(s => s.StudentId == id)
+                .Include(s => s.User)
+                .Include(s => s.Class)
+                .Select(s => new StudentGeneralInfo
+                {
+                    Name = s.User.Name,
+                    Email = s.User.Email,
+                    ClassName = s.Class.Name,
+                })
+                .ToListAsync();
+
+            if (student == null)
+            {
+                return NotFound();
+            }
+
+            return student;
         }
     }
 }

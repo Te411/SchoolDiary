@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
 using MyWebApplicationServer.DTO.Lesson;
+using MyWebApplicationServer.DTO.Schedule;
 using MyWebApplicationServer.DTO.Subject;
 using MyWebApplicationServer.DTO.Teacher;
 using Project.MyWebApplicationServer.Models;
@@ -25,7 +26,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Lessons
+        /// Получить все уроки
         /// </summary>
         /// <returns></returns>
         [HttpGet]
@@ -58,7 +59,7 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Lessons/5
+        /// получить уроки по названию предмета
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -98,6 +99,47 @@ namespace MyWebApplicationServer.Controllers
             }
 
             return lesson;
+        }
+
+        /// <summary>
+        /// Обновить домашнее задание для урока
+        /// </summary>
+        /// <param name="addHomeworkDto"></param>
+        /// <returns></returns>
+        [HttpPatch("UpdateHomeworkByLessonId")]
+        public async Task<IActionResult> UpdateHomework([FromBody] AddHomeworkLessonDto addHomeworkDto)
+        {
+            try
+            {
+                var lessonEntity = await _context.Lesson
+                    .FirstOrDefaultAsync(c => c.LessonId == addHomeworkDto.LessonId);
+
+                if (lessonEntity == null)
+                {
+                    return NotFound($"Урок '{addHomeworkDto.LessonId}' не найден");
+                }
+
+                lessonEntity.Homework = addHomeworkDto.Homework;
+
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
+            catch(DbUpdateConcurrencyException ex) 
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Ошибка при обновлении данных",
+                    Details = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Непредвиденная ошибка",
+                    Details = ex.Message
+                });
+            }
         }
     }
 }
