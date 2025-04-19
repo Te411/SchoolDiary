@@ -5,3 +5,4 @@
 - ASP.NET Core 8
 - MS SQL Server
 - Entity Framework Core
+- Swagger
