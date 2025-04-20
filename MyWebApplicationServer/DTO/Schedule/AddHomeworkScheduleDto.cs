@@ -8,6 +8,11 @@
         public string ClassName { get; set; }
 
         /// <summary>
+        /// Уникальный индентификатор недели
+        /// </summary>
+        public int WeekId { get; set; }
+
+        /// <summary>
         /// Уникальный индентификатор дня недели
         /// </summary>
         public int WeekDayId { get; set; }

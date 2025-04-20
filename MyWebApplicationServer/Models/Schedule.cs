@@ -41,6 +41,13 @@ namespace Project.MyWebApplicationServer.Models
         public int LessonOrder { get; set; }
 
         /// <summary>
+        /// Уникальный индентификатор недели
+        /// </summary>
+        [Key]
+        [Column(Order = 5)]
+        public int WeekId { get; set; }
+
+        /// <summary>
         /// Класс
         /// </summary>
         [ForeignKey("ClassId")]
@@ -57,5 +64,11 @@ namespace Project.MyWebApplicationServer.Models
         /// </summary>
         [ForeignKey("LessonId")]
         public virtual Lesson Lesson { get; set; }
+
+        /// <summary>
+        /// Урок
+        /// </summary>
+        [ForeignKey("WeekId")]
+        public virtual Week Week { get; set; }
     }
 }

@@ -75,6 +75,11 @@ namespace MyWebApplicationServer.Data
         public DbSet<WeekDay> WeekDay { get; set; }
 
         /// <summary>
+        /// Таблица - "Неделя"
+        /// </summary>
+        public DbSet<Week> Week { get; set; }
+
+        /// <summary>
 		/// Конфигурационный файл
 		/// </summary>
 		private readonly IConfiguration _configuration;
@@ -236,10 +241,16 @@ namespace MyWebApplicationServer.Data
                     .HasMaxLength(20);
             });
 
+            modelBuilder.Entity<Week>(entity =>
+            {
+                entity.HasKey(w => w.WeekId);
+                entity.HasIndex(w => new { w.StartDate, w.EndDate });
+            });
+
             modelBuilder.Entity<Schedule>(entity =>
             {
-                entity.HasKey(s => new {s.ScheduleId, s.ClassId, s.WeekDayId, s.LessonOrder});
-                entity.HasIndex(s => new { s.ClassId, s.WeekDayId, s.LessonOrder })
+                entity.HasKey(s => new {s.ScheduleId, s.ClassId, s.WeekDayId, s.LessonOrder, s.WeekId});
+                entity.HasIndex(s => new { s.ClassId, s.WeekDayId, s.LessonOrder, s.WeekId })
                     .IsUnique();
                 entity.HasOne(s => s.Class)
                     .WithMany()
@@ -252,6 +263,10 @@ namespace MyWebApplicationServer.Data
                 entity.HasOne(s => s.Lesson)
                     .WithMany()
                     .HasForeignKey(s => s.LessonId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(s => s.Week)
+                    .WithMany()
+                    .HasForeignKey(s => s.WeekId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }

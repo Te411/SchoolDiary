@@ -44,7 +44,7 @@ namespace MyWebApplicationServer.Controllers
         [HttpPost("authenticate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult> AuthenticateUser([FromBody] LoginRequest request)
+        public async Task<ActionResult<AuthResponseDto>> AuthenticateUser([FromBody] LoginRequest request)
         {
             if (string.IsNullOrEmpty(request.Login) || string.IsNullOrEmpty(request.Password))
             {
@@ -58,6 +58,14 @@ namespace MyWebApplicationServer.Controllers
             {
                 return NotFound("Пользователь с указанными логином и паролем не найден");
             }
+
+            var roles = await _context.UserRoles
+                .Where(ur => ur.UserId == user.UserId)
+                .Join(_context.Role,
+                    ur => ur.RoleId,
+                    r => r.RoleId,
+                    (ur, r) => r.RoleName)
+                .ToListAsync();
 
             user.InActive = true;
             _context.Users.Update(user);
@@ -73,11 +81,12 @@ namespace MyWebApplicationServer.Controllers
                 classId = student.ClassId;
             }
 
-            return Ok(new
+            return Ok(new AuthResponseDto
             {
                 Message = "Пользователь успешно аутентифицирован",
                 UserId = user.UserId,
-                classId = classId
+                ClassId = classId,
+                Roles = roles
             });
         }
     }

@@ -29,11 +29,12 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ScheduleDto>>> GetSchedule()
+        public async Task<ActionResult<IEnumerable<ScheduleWeekDto>>> GetSchedule()
         {
             var schedule = await _context.Schedule
                 .Include(s => s.Class)
                 .Include(s => s.WeekDay)
+                .Include(s => s.Week)
                 .Include(s => s.Lesson)
                     .ThenInclude(l => l.Subject)
                 .Include(s => s.Lesson)
@@ -49,20 +50,32 @@ namespace MyWebApplicationServer.Controllers
             }
 
             var result = schedule
-                .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name, s.Class.ClassId})
-                .Select(g => new ScheduleDto
+                .GroupBy(s => new { s.WeekId, s.Week.StartDate, s.Week.EndDate, s.Class.ClassId })
+                .Select(weekGroup => new ScheduleWeekDto
                 {
-                    WeekDayName = g.Key.Name,     
-                    Lessons = g.Select(s => new LessonForScheduleDto
-                    {
-                        LessonOrder = s.LessonOrder,
-                        SubjectName = s.Lesson.Subject.Name,
-                        TeacherName = s.Lesson.Teacher.User.Name,
-                        StartTime = s.Lesson.StartTime,
-                        EndTime = s.Lesson.EndTime,
-                        Homework = s.Lesson.Homework ?? null,
-                        Room = s.Lesson.Room?.Trim()
-                    }).ToList()
+                    WeekId = weekGroup.Key.WeekId,
+                    StartDate = weekGroup.Key.StartDate,
+                    EndDate = weekGroup.Key.EndDate,
+                    Schedule = weekGroup
+                        .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
+                        .Select(dayGroup => new ScheduleWeekDayDto
+                        {
+                            WeekDayName = dayGroup.Key.Name,
+                            Lessons = dayGroup
+                                .OrderBy(l => l.LessonOrder)
+                                .Select(s => new LessonForScheduleDto
+                                {
+                                    LessonOrder = s.LessonOrder,
+                                    SubjectName = s.Lesson.Subject.Name,
+                                    TeacherName = s.Lesson.Teacher.User.Name,
+                                    StartTime = s.Lesson.StartTime,
+                                    EndTime = s.Lesson.EndTime,
+                                    Homework = s.Lesson.Homework ?? null,
+                                    Room = s.Lesson.Room?.Trim()
+                                })
+                                .ToList()
+                        })
+                        .ToList()
                 })
                 .ToList();
 
@@ -74,13 +87,15 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="classId"></param>
         /// <returns></returns>
-        [HttpGet("ByClassId/{classId}")]
-        public async Task<ActionResult<List<ScheduleDto>>> GetSchedule(Guid classId)
+        [HttpGet("ByClassId/{classId}/{weekId}")]
+        public async Task<ActionResult<List<ScheduleWeekDto>>> GetSchedule(Guid classId, int weekId)
         {
             var schedule = await _context.Schedule
-                .Where(s => s.ClassId == classId)
+                .Where(s => s.ClassId == classId &&
+                s.WeekId == weekId)
                 .Include(s => s.Class)
                 .Include(s => s.WeekDay)
+                .Include(s => s.Week)
                 .Include(s => s.Lesson)
                     .ThenInclude(l => l.Subject)
                 .Include(s => s.Lesson)
@@ -96,67 +111,51 @@ namespace MyWebApplicationServer.Controllers
             }
 
             var result = schedule
-                .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
-                .Select(g => new ScheduleDto
+                .GroupBy(s => new { s.WeekId, s.Week.StartDate, s.Week.EndDate })
+                .Select(weekGroup => new ScheduleWeekDto
                 {
-                    WeekDayName = g.Key.Name,
-                    Lessons = g.Select(s => new LessonForScheduleDto
-                    {
-                        LessonOrder = s.LessonOrder,
-                        SubjectName = s.Lesson.Subject.Name,
-                        TeacherName = s.Lesson.Teacher.User.Name,
-                        StartTime = s.Lesson.StartTime,
-                        EndTime = s.Lesson.EndTime,
-                        Homework = s.Lesson.Homework ?? null,
-                        Room = s.Lesson.Room?.Trim()
-                    }).ToList()
+                    WeekId = weekGroup.Key.WeekId,
+                    StartDate = weekGroup.Key.StartDate,
+                    EndDate = weekGroup.Key.EndDate,
+                    Schedule = weekGroup
+                        .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
+                        .Select(dayGroup => new ScheduleWeekDayDto
+                        {
+                            WeekDayName = dayGroup.Key.Name,
+                            Lessons = dayGroup
+                                .OrderBy(l => l.LessonOrder)
+                                .Select(s => new LessonForScheduleDto
+                                {
+                                    LessonOrder = s.LessonOrder,
+                                    SubjectName = s.Lesson.Subject.Name,
+                                    TeacherName = s.Lesson.Teacher.User.Name,
+                                    StartTime = s.Lesson.StartTime,
+                                    EndTime = s.Lesson.EndTime,
+                                    Homework = s.Lesson.Homework ?? null,
+                                    Room = s.Lesson.Room?.Trim()
+                                })
+                                .ToList()
+                        })
+                        .ToList()
                 })
                 .ToList();
 
             return result;
         }
 
-        ///// <summary>
-        ///// GET: api/ByClassName/Schedules/5
-        ///// Получить расписание по имени класса
-        ///// </summary>
-        ///// <param name="className"></param>
-        ///// <returns></returns>
-        //[HttpGet("ByClassName/{className}")]
-        //public async Task<ActionResult<IEnumerable<Schedule>>> GetSchedule(string className)
-        //{
-        //    var schedule = await _context.Schedule
-        //        .Where(s => s.Class.Name == className)
-        //        .Include(s => s.Class)
-        //        .Include(s => s.WeekDay)
-        //        .Include(s => s.Lesson)
-        //            .ThenInclude(l => l.Subject)
-        //        .Include(s => s.Lesson)
-        //            .ThenInclude(l => l.Teacher)
-        //                .ThenInclude(t => t.User)
-        //        .OrderBy(s => s.WeekDayId)
-        //        .ThenBy(s => s.LessonOrder)
-        //        .ToListAsync();
-
-        //    if (schedule == null || !schedule.Any())
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    return schedule;
-        //}
-
         /// <summary>
         /// Получить расписание по имени класса
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
-        [HttpGet("ByClassName/Correct/{className}")]
-        public async Task<ActionResult<List<ScheduleDto>>> GetCorrectSchedule(string className)
+        [HttpGet("ByClassName/Correct/{className}/{weekId}")]
+        public async Task<ActionResult<List<ScheduleWeekDto>>> GetCorrectSchedule(string className, int weekId)
         {
             var schedule = await _context.Schedule
-                .Where(s => s.Class.Name == className)
+                .Where(s => s.Class.Name == className &&
+                s.WeekId == weekId)
                 .Include(s => s.WeekDay)
+                .Include (s => s.Week)
                 .Include(s => s.Lesson)
                     .ThenInclude(l => l.Subject)
                 .Include(s => s.Lesson)
@@ -172,20 +171,32 @@ namespace MyWebApplicationServer.Controllers
             }
 
             var result = schedule
-                .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
-                .Select(g => new ScheduleDto
+                .GroupBy(s => new { s.WeekId, s.Week.StartDate, s.Week.EndDate })
+                .Select(weekGroup => new ScheduleWeekDto
                 {
-                    WeekDayName = g.Key.Name,
-                    Lessons = g.Select(s => new LessonForScheduleDto
-                    {
-                        LessonOrder = s.LessonOrder,
-                        SubjectName = s.Lesson.Subject.Name,
-                        TeacherName = s.Lesson.Teacher.User.Name,
-                        StartTime = s.Lesson.StartTime,
-                        EndTime = s.Lesson.EndTime,
-                        Homework = s.Lesson.Homework ?? null,
-                        Room = s.Lesson.Room?.Trim()
-                    }).ToList()
+                    WeekId = weekGroup.Key.WeekId,
+                    StartDate = weekGroup.Key.StartDate,
+                    EndDate = weekGroup.Key.EndDate,
+                    Schedule = weekGroup
+                        .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
+                        .Select(dayGroup => new ScheduleWeekDayDto
+                        {
+                            WeekDayName = dayGroup.Key.Name,
+                            Lessons = dayGroup
+                                .OrderBy(l => l.LessonOrder)
+                                .Select(s => new LessonForScheduleDto
+                                {
+                                    LessonOrder = s.LessonOrder,
+                                    SubjectName = s.Lesson.Subject.Name,
+                                    TeacherName = s.Lesson.Teacher.User.Name,
+                                    StartTime = s.Lesson.StartTime,
+                                    EndTime = s.Lesson.EndTime,
+                                    Homework = s.Lesson.Homework ?? null,
+                                    Room = s.Lesson.Room?.Trim()
+                                })
+                                .ToList()
+                        })
+                        .ToList()
                 })
                 .ToList();
 
@@ -202,6 +213,14 @@ namespace MyWebApplicationServer.Controllers
         {
             try
             {
+                var weekEntity = await _context.Week
+                    .FirstOrDefaultAsync(w => w.WeekId == addHomeworkDto.WeekId);
+
+                if (weekEntity == null)
+                {
+                    return NotFound($"Недели '{addHomeworkDto.WeekId}' не найдено");
+                }
+
                 var classEntity = await _context.Class
                     .FirstOrDefaultAsync(c => c.Name == addHomeworkDto.ClassName);
 
@@ -214,7 +233,8 @@ namespace MyWebApplicationServer.Controllers
                     .FirstOrDefaultAsync(s =>
                     s.ClassId == classEntity.ClassId &&
                     s.WeekDayId == addHomeworkDto.WeekDayId &&
-                    s.LessonOrder == addHomeworkDto.LessonOrder);
+                    s.LessonOrder == addHomeworkDto.LessonOrder &&
+                    s.WeekId == addHomeworkDto.WeekId);
 
                 if (schedule == null)
                 {
@@ -273,6 +293,14 @@ namespace MyWebApplicationServer.Controllers
         {
             try
             {
+                var weekEntity = await _context.Week
+                    .FirstOrDefaultAsync(w => w.WeekId == addScheduleDto.WeekId);
+
+                if (weekEntity == null)
+                {
+                    return NotFound($"Недели '{addScheduleDto.WeekId}' не найдено");
+                }
+
                 var classEntity = await _context.Class
                     .FirstOrDefaultAsync(c => c.Name == addScheduleDto.ClassName);
        
@@ -336,7 +364,9 @@ namespace MyWebApplicationServer.Controllers
                 }
        
                 var existingSchedule = await _context.Schedule
-                    .Where(s => s.ClassId == classEntity.ClassId && s.WeekDayId == addScheduleDto.WeekDayId)
+                    .Where(s => s.ClassId == classEntity.ClassId && 
+                    s.WeekDayId == addScheduleDto.WeekDayId &&
+                    s.WeekId == addScheduleDto.WeekId)
                     .Include(s => s.Lesson)
                     .ToListAsync();
        
@@ -405,6 +435,7 @@ namespace MyWebApplicationServer.Controllers
                     ClassId = classEntity.ClassId,
                     WeekDayId = addScheduleDto.WeekDayId,
                     LessonId = item.LessonId,
+                    WeekId = addScheduleDto.WeekId,
                     LessonOrder = item.LessonOrder
                 }).ToList();
        
@@ -456,7 +487,15 @@ namespace MyWebApplicationServer.Controllers
        
                foreach (var (weekDayId, dayLessons) in lessonsByDay)
                {
-                   var weekDay = await _context.WeekDay
+                    var week = await _context.Week
+                       .FirstOrDefaultAsync(w => w.WeekId == addScheduleDto.WeekId);
+
+                    if (week == null)
+                    {
+                        return NotFound($"Неделя с ID {addScheduleDto.WeekId} не найдена.");
+                    }
+
+                    var weekDay = await _context.WeekDay
                        .FirstOrDefaultAsync(w => w.WeekDayId == weekDayId);
        
                    if (weekDay == null)
@@ -562,6 +601,7 @@ namespace MyWebApplicationServer.Controllers
                            ClassId = classEntity.ClassId,
                            WeekDayId = lessonDto.WeekDayId,
                            LessonId = newLesson.LessonId,
+                           WeekId = addScheduleDto.WeekId,
                            LessonOrder = lessonDto.LessonOrder
                        });
                    }
@@ -606,7 +646,9 @@ namespace MyWebApplicationServer.Controllers
         //    {
         //        var scheduleEntry = await _context.Schedule
         //            .Include(s => s.Lesson)
-        //            .FirstOrDefaultAsync(s => s.ScheduleId == scheduleId);
+        //            .FirstOrDefaultAsync(s =>
+        //            s.ScheduleId == scheduleId &&
+        //            s.WeekId == editingDto.WeekId);
         //
         //        if (scheduleEntry == null)
         //        {

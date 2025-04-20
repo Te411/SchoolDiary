@@ -14,6 +14,16 @@ namespace MyWebApplicationServer.DTO.Grade
         public Guid GradeId { get; set; }
 
         /// <summary>
+        /// Уникальный индентификатор предмета
+        /// </summary>
+        public Guid SubjectId { get; set; }
+
+        /// <summary>
+        /// Название предмета
+        /// </summary>
+        public string SubjectName { get; set; }
+
+        /// <summary>
         /// Оценка
         /// </summary>
         [Range(1, 5, ErrorMessage = "Оценка должна быть в диапазоне от 1 до 5")]
