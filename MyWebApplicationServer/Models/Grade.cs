@@ -33,7 +33,7 @@ namespace Project.MyWebApplicationServer.Models
         public int Value { get; set; }
 
         /// <summary>
-        /// Комментарий
+        /// Дата
         /// </summary>
         public DateTime Data { get; set; }
 

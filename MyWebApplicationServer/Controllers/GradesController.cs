@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
 using MyWebApplicationServer.DTO.Grade;
 using MyWebApplicationServer.DTO.Student;
+using MyWebApplicationServer.DTO.Subject;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
@@ -38,6 +39,8 @@ namespace MyWebApplicationServer.Controllers
                 .Select(g => new GradeDto
                 {
                     GradeId = g.GradeId,
+                    SubjectId = g.SubjectId,
+                    SubjectName = g.Subject.Name,
                     Value = g.Value,
                     Data = g.Data,
                     Student = new StudentForGradeDto
@@ -65,6 +68,8 @@ namespace MyWebApplicationServer.Controllers
                 .Select(g => new GradeDto
                 {
                     GradeId = g.GradeId,
+                    SubjectId = g.SubjectId,
+                    SubjectName = g.Subject.Name,
                     Value = g.Value,
                     Data = g.Data,
                     Student = new StudentForGradeDto
@@ -99,6 +104,8 @@ namespace MyWebApplicationServer.Controllers
                 .Select(g => new GradeDto
                 {
                     GradeId = g.GradeId,
+                    SubjectId = g.SubjectId,
+                    SubjectName = g.Subject.Name,
                     Value = g.Value,
                     Data = g.Data,
                     Student = new StudentForGradeDto
@@ -160,6 +167,8 @@ namespace MyWebApplicationServer.Controllers
                 .Select(g => new GradeDto
                 {
                     GradeId = g.GradeId,
+                    SubjectId = g.SubjectId,
+                    SubjectName = g.Subject.Name,
                     Value = g.Value,
                     Data = g.Data,
                     Student = new StudentForGradeDto
@@ -189,6 +198,8 @@ namespace MyWebApplicationServer.Controllers
                 .Select(g => new GradeDto
                 {
                     GradeId = g.GradeId,
+                    SubjectId = g.SubjectId,
+                    SubjectName = g.Subject.Name,
                     Value = g.Value,
                     Data = g.Data,
                     Student = new StudentForGradeDto
@@ -213,23 +224,29 @@ namespace MyWebApplicationServer.Controllers
         /// <param name="StudentId">id студента</param>
         /// <returns></returns>
         [HttpGet("StudentId/{StudentId}")]
-        public async Task<ActionResult<IEnumerable<GradeDto>>> GetGradeByStudentId(Guid StudentId)
+        public async Task<ActionResult<IEnumerable<SubjectForGradeDto>>> GetGradeByStudentId(Guid StudentId)
         {
             var grade = await _context.Grade
                 .Where(g => g.StudentId == StudentId)
                 .Include(g => g.Subject)
                 .Include(g => g.Student)
                     .ThenInclude(s => s.User)
-                .Select(g => new GradeDto
+                .GroupBy(g => new { g.SubjectId, g.Subject.Name })
+                .Select(g => new SubjectForGradeDto
                 {
-                    GradeId = g.GradeId,
-                    Value = g.Value,
-                    Data = g.Data,
-                    Student = new StudentForGradeDto
+                    Name = g.Key.Name,
+                    SubjectId = g.Key.SubjectId,
+                    grade = g.Select(g => new GradeDto
                     {
-                        StudentId = g.Student.StudentId,
-                        Name = g.Student.User.Name,
-                    }
+                        GradeId = g.GradeId,
+                        Value = g.Value,
+                        Data = g.Data,
+                        Student = new StudentForGradeDto
+                        {
+                            StudentId = g.Student.StudentId,
+                            Name = g.Student.User.Name,
+                        }
+                    }).ToList()
                 })
                 .ToListAsync();
 

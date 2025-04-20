@@ -53,14 +53,40 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// Получить студента по id
+        /// Получить студента по его id
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Student>> GetStudent(Guid id)
+        public async Task<ActionResult<Student>> GetStudentById(Guid id)
         {
             var student = await _context.Student.FindAsync(id);
+
+            if (student == null)
+            {
+                return NotFound();
+            }
+
+            return student;
+        }
+
+        /// <summary>
+        /// Получить студента по User id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("userId/{id}")]
+        public async Task<ActionResult<IEnumerable<StudentForGradeDto>>> GetStudentByUserId(Guid id)
+        {
+            var student = await _context.Student
+                .Where(s => s.UserId == id)
+                .Include(s => s.User)
+                .Select(s => new StudentForGradeDto
+                {
+                    StudentId = s.StudentId,
+                    Name = s.User.Name
+                })
+                .ToListAsync();
 
             if (student == null)
             {
