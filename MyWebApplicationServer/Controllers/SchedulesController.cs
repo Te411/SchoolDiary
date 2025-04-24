@@ -29,7 +29,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ScheduleWeekDto>>> GetSchedule()
+        public async Task<ActionResult<IEnumerable<ScheduleWeekByClassDto>>> GetSchedule()
         {
             var schedule = await _context.Schedule
                 .Include(s => s.Class)
@@ -51,19 +51,19 @@ namespace MyWebApplicationServer.Controllers
 
             var result = schedule
                 .GroupBy(s => new { s.WeekId, s.Week.StartDate, s.Week.EndDate, s.Class.ClassId })
-                .Select(weekGroup => new ScheduleWeekDto
+                .Select(weekGroup => new ScheduleWeekByClassDto
                 {
                     WeekId = weekGroup.Key.WeekId,
                     StartDate = weekGroup.Key.StartDate,
                     EndDate = weekGroup.Key.EndDate,
                     Schedule = weekGroup
                         .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
-                        .Select(dayGroup => new ScheduleWeekDayDto
+                        .Select(dayGroup => new ScheduleWeekDayByClassDto
                         {
                             WeekDayName = dayGroup.Key.Name,
                             Lessons = dayGroup
                                 .OrderBy(l => l.LessonOrder)
-                                .Select(s => new LessonForScheduleDto
+                                .Select(s => new LessonForScheduleByClassDto
                                 {
                                     LessonOrder = s.LessonOrder,
                                     SubjectName = s.Lesson.Subject.Name,
@@ -83,12 +83,12 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// Получить расписание по id класса
+        /// Получить расписание по id класса и id недели
         /// </summary>
         /// <param name="classId"></param>
         /// <returns></returns>
         [HttpGet("ByClassId/{classId}/{weekId}")]
-        public async Task<ActionResult<List<ScheduleWeekDto>>> GetSchedule(Guid classId, int weekId)
+        public async Task<ActionResult<List<ScheduleWeekByClassDto>>> GetScheduleByClass(Guid classId, int weekId)
         {
             var schedule = await _context.Schedule
                 .Where(s => s.ClassId == classId &&
@@ -112,19 +112,19 @@ namespace MyWebApplicationServer.Controllers
 
             var result = schedule
                 .GroupBy(s => new { s.WeekId, s.Week.StartDate, s.Week.EndDate })
-                .Select(weekGroup => new ScheduleWeekDto
+                .Select(weekGroup => new ScheduleWeekByClassDto
                 {
                     WeekId = weekGroup.Key.WeekId,
                     StartDate = weekGroup.Key.StartDate,
                     EndDate = weekGroup.Key.EndDate,
                     Schedule = weekGroup
                         .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
-                        .Select(dayGroup => new ScheduleWeekDayDto
+                        .Select(dayGroup => new ScheduleWeekDayByClassDto
                         {
                             WeekDayName = dayGroup.Key.Name,
                             Lessons = dayGroup
                                 .OrderBy(l => l.LessonOrder)
-                                .Select(s => new LessonForScheduleDto
+                                .Select(s => new LessonForScheduleByClassDto
                                 {
                                     LessonOrder = s.LessonOrder,
                                     SubjectName = s.Lesson.Subject.Name,
@@ -144,12 +144,73 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// Получить расписание по имени класса
+        /// Получить расписание по id учителя и id недели
+        /// </summary>
+        /// <param name="classId"></param>
+        /// <returns></returns>
+        [HttpGet("ByTeacherId/{teacherId}/{weekId}")]
+        public async Task<ActionResult<List<ScheduleWeekByTeacherDto>>> GetScheduleByTeacher(Guid teacherId, int weekId)
+        {
+            var schedule = await _context.Schedule
+                    .Where(s => s.Lesson.TeacherId == teacherId &&
+                                s.WeekId == weekId)
+                    .Include(s => s.Class)
+                    .Include(s => s.WeekDay)
+                    .Include(s => s.Week)
+                    .Include(s => s.Lesson)
+                        .ThenInclude(l => l.Subject)
+                    .Include(s => s.Lesson)
+                        .ThenInclude(l => l.Teacher)
+                            .ThenInclude(t => t.User)
+                    .OrderBy(s => s.WeekDayId)
+                    .ThenBy(s => s.LessonOrder)
+                    .ToListAsync();
+
+            if (schedule == null || !schedule.Any())
+            {
+                return NotFound();
+            }
+
+            var result = schedule
+                .GroupBy(s => new { s.WeekId, s.Week.StartDate, s.Week.EndDate })
+                .Select(weekGroup => new ScheduleWeekByTeacherDto
+                {
+                    WeekId = weekGroup.Key.WeekId,
+                    StartDate = weekGroup.Key.StartDate,
+                    EndDate = weekGroup.Key.EndDate,
+                    Schedule = weekGroup
+                        .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
+                        .Select(dayGroup => new ScheduleWeekDayByTeacherDto
+                        {
+                            WeekDayName = dayGroup.Key.Name,
+                            Lessons = dayGroup
+                                .OrderBy(l => l.LessonOrder)
+                                .Select(s => new LessonForScheduleByTeacherDto
+                                {
+                                    ClassName = s.Class.Name,
+                                    LessonOrder = s.LessonOrder,
+                                    SubjectName = s.Lesson.Subject.Name,
+                                    StartTime = s.Lesson.StartTime,
+                                    EndTime = s.Lesson.EndTime,
+                                    Homework = s.Lesson.Homework ?? null,
+                                    Room = s.Lesson.Room?.Trim()
+                                })
+                                .ToList()
+                        })
+                        .ToList()
+                })
+                .ToList();
+
+            return result;
+        }
+
+        /// <summary>
+        /// Получить расписание по имени класса и id недели
         /// </summary>
         /// <param name="className"></param>
         /// <returns></returns>
         [HttpGet("ByClassName/Correct/{className}/{weekId}")]
-        public async Task<ActionResult<List<ScheduleWeekDto>>> GetCorrectSchedule(string className, int weekId)
+        public async Task<ActionResult<List<ScheduleWeekByClassDto>>> GetCorrectSchedule(string className, int weekId)
         {
             var schedule = await _context.Schedule
                 .Where(s => s.Class.Name == className &&
@@ -172,19 +233,19 @@ namespace MyWebApplicationServer.Controllers
 
             var result = schedule
                 .GroupBy(s => new { s.WeekId, s.Week.StartDate, s.Week.EndDate })
-                .Select(weekGroup => new ScheduleWeekDto
+                .Select(weekGroup => new ScheduleWeekByClassDto
                 {
                     WeekId = weekGroup.Key.WeekId,
                     StartDate = weekGroup.Key.StartDate,
                     EndDate = weekGroup.Key.EndDate,
                     Schedule = weekGroup
                         .GroupBy(s => new { s.WeekDayId, s.WeekDay.Name })
-                        .Select(dayGroup => new ScheduleWeekDayDto
+                        .Select(dayGroup => new ScheduleWeekDayByClassDto
                         {
                             WeekDayName = dayGroup.Key.Name,
                             Lessons = dayGroup
                                 .OrderBy(l => l.LessonOrder)
-                                .Select(s => new LessonForScheduleDto
+                                .Select(s => new LessonForScheduleByClassDto
                                 {
                                     LessonOrder = s.LessonOrder,
                                     SubjectName = s.Lesson.Subject.Name,
@@ -282,6 +343,9 @@ namespace MyWebApplicationServer.Controllers
         {
             return newStartTime < existingEndTime && newEndTime > existingStartTime;
         }
+
+
+
 
         /// <summary>
         /// Добавление расписания из существующих уроков
@@ -381,7 +445,26 @@ namespace MyWebApplicationServer.Controllers
                         }
                     }
                 }
-       
+
+                foreach (var lesson in lessons)
+                {
+                    var teacherConflicts = await _context.Schedule
+                        .Include(s => s.Lesson)
+                        .Include(s => s.Class)
+                        .Where(s => s.Lesson.TeacherId == lesson.TeacherId &&
+                                    s.WeekId == addScheduleDto.WeekId &&
+                                    s.WeekDayId == addScheduleDto.WeekDayId &&
+                                    (lesson.StartTime < s.Lesson.EndTime &&
+                                     lesson.EndTime > s.Lesson.StartTime))
+                        .ToListAsync();
+
+                    if (teacherConflicts.Any())
+                    {
+                        var conflict = teacherConflicts.First();
+                        return BadRequest($"Учитель уже ведёт урок в это время в другом классе .");
+                    }
+                }
+
                 var lessonOrders = addScheduleDto.Lessons.Select(l => l.LessonOrder).ToList();
        
                 if (lessonOrders.Distinct().Count() != lessonOrders.Count)
@@ -461,7 +544,7 @@ namespace MyWebApplicationServer.Controllers
                 });
             }
         }
-       
+ 
         /// <summary>
         /// Добавление расписания с созданием новых уроков
         /// </summary>
@@ -475,6 +558,7 @@ namespace MyWebApplicationServer.Controllers
            {
                var classEntity = await _context.Class
                    .FirstOrDefaultAsync(c => c.Name == addScheduleDto.ClassName);
+
        
                if (classEntity == null)
                {
@@ -484,7 +568,9 @@ namespace MyWebApplicationServer.Controllers
                var lessonsByDay = addScheduleDto.Lessons
                    .GroupBy(l => l.WeekDayId)
                    .ToDictionary(g => g.Key, g => g.ToList());
-       
+
+               var teacherTimes = new Dictionary<Guid, List<(TimeSpan Start, TimeSpan End)>>();
+
                foreach (var (weekDayId, dayLessons) in lessonsByDay)
                {
                     var week = await _context.Week
@@ -558,6 +644,26 @@ namespace MyWebApplicationServer.Controllers
                            return BadRequest("Конфликт с существующими уроками");
                        }
                    }
+
+                    foreach (var lessonDto in dayLessons)
+                    {
+                        var teacherConflicts = await _context.Schedule
+                            .Include(s => s.Lesson)
+                            .Include(s => s.Class)
+                            .Where(s => s.Lesson.TeacherId == lessonDto.TeacherId &&
+                                        s.WeekId == addScheduleDto.WeekId &&
+                                        s.WeekDayId == weekDayId &&
+                                        (lessonDto.StartTime < s.Lesson.EndTime &&
+                                        lessonDto.EndTime > s.Lesson.StartTime))
+                            .ToListAsync();
+
+                        if (teacherConflicts.Any())
+                        {
+                            var conflict = teacherConflicts.First();
+                            return BadRequest($"Учитель уже ведёт урок в это время в другом классе .");
+                        }
+                    }
+
                }
        
                var newLessons = new List<Lesson>();
@@ -631,6 +737,70 @@ namespace MyWebApplicationServer.Controllers
                });
            }
        }
+
+        /// <summary>
+        /// Удаление урока из расписания
+        /// </summary>
+        /// <param name="className"></param>
+        /// <param name="weekId"></param>
+        /// <param name="weekDayId"></param>
+        /// <param name="lessonOrder"></param>
+        /// <returns></returns>
+        [HttpDelete("ByClassLesson/{className}/{weekId}/{weekDayId}/{lessonOrder}")]
+        public async Task<IActionResult> DeleteScheduleByClassLesson(string className, int weekId, int weekDayId, int lessonOrder)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var classEntity = await _context.Class.FirstOrDefaultAsync(c => c.Name == className);
+                if (classEntity == null)
+                {
+                    return NotFound($"Класс '{className}' не найден.");
+                }
+
+                var schedule = await _context.Schedule
+                    .FirstOrDefaultAsync(s =>
+                        s.ClassId == classEntity.ClassId &&
+                        s.WeekId == weekId &&
+                        s.WeekDayId == weekDayId &&
+                        s.LessonOrder == lessonOrder);
+
+                if (schedule == null)
+                {
+                    return NotFound("Запись в расписании не найдена.");
+                }
+
+                var lessonId = schedule.LessonId;
+
+                _context.Schedule.Remove(schedule);
+
+                bool isLessonUsedElsewhere = await _context.Schedule
+                    .AnyAsync(s => s.LessonId == lessonId && s.ScheduleId != schedule.ScheduleId);
+
+                if (!isLessonUsedElsewhere)
+                {
+                    var lesson = await _context.Lesson.FindAsync(lessonId);
+                    if (lesson != null)
+                    {
+                        _context.Lesson.Remove(lesson);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new
+                {
+                    Message = "Ошибка при удалении",
+                    Details = ex.Message
+                });
+            }
+        }
 
         /// Делал Слава (нужно будет проверить)
         /// <summary>
