@@ -141,5 +141,26 @@ namespace MyWebApplicationServer.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Удаление урока
+        /// </summary>
+        /// <param name="lessonId"></param>
+        /// <returns></returns>
+        //[HttpDelete("ByClassLesson/{lessonId}")]
+        //public async Task<IActionResult> DeleteLesson(Guid lessonId)
+        //{
+        //    var LessonEntity = await _context.Lesson
+        //        .FirstOrDefaultAsync(l => l.LessonId == lessonId);
+
+        //    if (LessonEntity == null)
+        //    {
+        //        return NotFound($"Урок '{lessonId}' не найден.");
+        //    }
+
+        //    _context.Lesson.Remove(LessonEntity);
+        //    await _context.SaveChangesAsync();
+        //    return NoContent();
+        //}
     }
 }

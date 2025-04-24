@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MyWebApplicationServer.Data;
@@ -88,6 +89,113 @@ namespace MyWebApplicationServer.Controllers
                 ClassId = classId,
                 Roles = roles
             });
+        }
+
+
+        /// <summary>
+        /// Добавление новых пользователй
+        /// </summary>
+        /// <param name="userDto"></param>
+        /// <returns></returns>
+        [HttpPost("CreateNewUser")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserDto userDto)
+        {
+            if (await _context.Users.AnyAsync(u => u.Login == userDto.Login))
+            {
+                return BadRequest("Логин уже занят");
+            }
+
+            if (await _context.Users.AnyAsync(u => u.Email == userDto.Email))
+            {
+                return BadRequest("Email уже занят");
+            }
+
+            var user = new User
+            {
+                Email = userDto.Email,
+                Password = userDto.Password,
+                Name = userDto.Name,
+                Login = userDto.Login,
+                InActive = false
+            };
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                foreach (var roleName in userDto.Roles)
+                {
+                    var role = await _context.Role
+                        .FirstOrDefaultAsync(r => r.RoleName == roleName);
+
+                    if (role == null)
+                    {
+                        return BadRequest($"Роль '{roleName}' не существует");
+                    }
+
+                    _context.UserRoles.Add(new UserRole
+                    {
+                        UserId = user.UserId,
+                        RoleId = role.RoleId
+                    });
+                }
+
+                if (userDto.Roles.Contains("Студент"))
+                {
+                    if (!userDto.ClassId.HasValue)
+                    {
+                        return BadRequest("Для студента требуется ClassId");
+                    }
+                    var classExists = await _context.Class
+                        .AnyAsync(c => c.ClassId == userDto.ClassId.Value);
+
+                    if (!classExists)
+                    {
+                        return BadRequest("Указанный класс не существует");
+                    }
+
+                    var student = new Student
+                    {
+                        UserId = user.UserId,
+                        ClassId = userDto.ClassId.Value
+                    };
+
+                    _context.Student.Add(student);
+                }
+
+                if (userDto.Roles.Contains("Учитель"))
+                {
+                    _context.Teacher.Add(new Teacher
+                    {
+                        UserId = user.UserId
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return CreatedAtAction(nameof(GetUsers), user);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Ошибка при добавлении пользователя.",
+                    Details = dbEx.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Непредвиденная ошибка!",
+                    Details = ex.Message
+                });
+            }
         }
     }
 }
