@@ -126,6 +126,7 @@ namespace MyWebApplicationServer.Controllers
                                 .OrderBy(l => l.LessonOrder)
                                 .Select(s => new LessonForScheduleByClassDto
                                 {
+                                    LessonId = s.LessonId,
                                     LessonOrder = s.LessonOrder,
                                     SubjectName = s.Lesson.Subject.Name,
                                     TeacherName = s.Lesson.Teacher.User.Name,
@@ -144,15 +145,22 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// Получить расписание по id учителя и id недели
+        /// Получить расписание по id пользователя и id недели
         /// </summary>
         /// <param name="classId"></param>
         /// <returns></returns>
-        [HttpGet("ByTeacherId/{teacherId}/{weekId}")]
-        public async Task<ActionResult<List<ScheduleWeekByTeacherDto>>> GetScheduleByTeacher(Guid teacherId, int weekId)
+        [HttpGet("ByTeacher/{userId}/{weekId}")]
+        public async Task<ActionResult<List<ScheduleWeekByTeacherDto>>> GetScheduleByTeacher(Guid userId, int weekId)
         {
+            var teacher = await _context.Teacher.FirstOrDefaultAsync(t => t.UserId == userId);
+
+            if (teacher == null)
+            {
+                return BadRequest($"Учителя с id {teacher.TeacherId} не найдено");
+            }
+
             var schedule = await _context.Schedule
-                    .Where(s => s.Lesson.TeacherId == teacherId &&
+                    .Where(s => s.Lesson.TeacherId == teacher.TeacherId &&
                                 s.WeekId == weekId)
                     .Include(s => s.Class)
                     .Include(s => s.WeekDay)
@@ -187,6 +195,7 @@ namespace MyWebApplicationServer.Controllers
                                 .OrderBy(l => l.LessonOrder)
                                 .Select(s => new LessonForScheduleByTeacherDto
                                 {
+                                    LessonId = s.LessonId,
                                     ClassName = s.Class.Name,
                                     LessonOrder = s.LessonOrder,
                                     SubjectName = s.Lesson.Subject.Name,
@@ -203,6 +212,9 @@ namespace MyWebApplicationServer.Controllers
 
             return result;
         }
+
+
+
 
         /// <summary>
         /// Получить расписание по имени класса и id недели
@@ -247,6 +259,7 @@ namespace MyWebApplicationServer.Controllers
                                 .OrderBy(l => l.LessonOrder)
                                 .Select(s => new LessonForScheduleByClassDto
                                 {
+                                    LessonId = s.LessonId,
                                     LessonOrder = s.LessonOrder,
                                     SubjectName = s.Lesson.Subject.Name,
                                     TeacherName = s.Lesson.Teacher.User.Name,
@@ -343,9 +356,6 @@ namespace MyWebApplicationServer.Controllers
         {
             return newStartTime < existingEndTime && newEndTime > existingStartTime;
         }
-
-
-
 
         /// <summary>
         /// Добавление расписания из существующих уроков

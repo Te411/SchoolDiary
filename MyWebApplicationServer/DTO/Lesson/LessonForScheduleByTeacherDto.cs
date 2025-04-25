@@ -3,6 +3,11 @@
     public class LessonForScheduleByTeacherDto
     {
         /// <summary>
+        /// Уникальный индетификатор урока
+        /// </summary>
+        public Guid LessonId { get; set; }
+
+        /// <summary>
         /// Название класса
         /// </summary>
         public string ClassName { get; set; }

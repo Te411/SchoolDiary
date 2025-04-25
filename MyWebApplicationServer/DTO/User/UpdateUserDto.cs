@@ -1,0 +1,38 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MyWebApplicationServer.DTO.User
+{
+    public class UpdateUserDto
+    {
+        /// <summary>
+        /// Почта
+        /// </summary>
+        [EmailAddress]
+        public string? Email { get; set; }
+
+        /// <summary>
+        /// Имя
+        /// </summary>
+        public string? Name { get; set; }
+
+        /// <summary>
+        /// Логин
+        /// </summary>
+        public string? Login { get; set; }
+
+        /// <summary>
+        /// Пароль
+        /// </summary>
+        public string? Password { get; set; }
+
+        /// <summary>
+        /// Статус активности
+        /// </summary>
+        public bool? InActive { get; set; }
+
+        /// <summary>
+        /// Уникальный индентификатор класса
+        /// </summary>
+        public Guid? ClassId { get; set; }
+    }
+}
