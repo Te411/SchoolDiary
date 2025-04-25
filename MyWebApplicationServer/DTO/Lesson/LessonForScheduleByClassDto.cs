@@ -3,6 +3,11 @@
     public class LessonForScheduleByClassDto
     {
         /// <summary>
+        /// Уникальный индетификатор урока
+        /// </summary>
+        public Guid LessonId { get; set; }
+
+        /// <summary>
         /// Порядок урока
         /// </summary>
         public int LessonOrder { get; set; }
