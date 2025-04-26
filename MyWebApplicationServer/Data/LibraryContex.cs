@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MyWebApplicationServer.Models;
 using Project.MyWebApplicationServer.Models;
 using System.Diagnostics;
 
@@ -80,6 +81,11 @@ namespace MyWebApplicationServer.Data
         public DbSet<Week> Week { get; set; }
 
         /// <summary>
+        /// Таблица - "Итоговая оценка"
+        /// </summary>
+        public DbSet<FinalGrade> FinalGrade { get; set; }
+
+        /// <summary>
 		/// Конфигурационный файл
 		/// </summary>
 		private readonly IConfiguration _configuration;
@@ -101,6 +107,42 @@ namespace MyWebApplicationServer.Data
 		/// <param name="modelBuilder"></param>
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
+            modelBuilder.Entity<FinalGrade>(entity =>
+            {
+                entity.HasKey(fg => fg.FinalGradeId);
+
+                entity.Property(fg => fg.PeriodType)
+                    .IsRequired()
+                    .HasMaxLength(10)
+                    .HasConversion(
+                        v => v.Trim(),
+                        v => v.Trim()
+                    )
+                    .HasAnnotation("CheckConstraint", "PeriodType IN ('Четверть', 'Год')");
+
+                entity.Property(fg => fg.Quarter)
+                    .HasAnnotation("CheckConstraint",
+                        "(PeriodType = 'Четверть' AND Quarter BETWEEN 1 AND 4) OR " +
+                        "(PeriodType = 'Год' AND Quarter = 0)");
+
+                entity.Property(fg => fg.GradeValue)
+                    .HasAnnotation("Range", new[] { 1, 5 });
+
+                entity.HasIndex(fg => new { fg.StudentId, fg.SubjectId, fg.Quarter })
+                    .IsUnique();
+
+                entity.HasOne(fg => fg.Student)
+                    .WithMany()
+                    .HasForeignKey(fg => fg.StudentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(fg => fg.Subject)
+                    .WithMany()
+                    .HasForeignKey(fg => fg.SubjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             modelBuilder.Entity<User>(entity =>
             {
                 entity.Property(u => u.Email)
