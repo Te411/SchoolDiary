@@ -1,5 +1,8 @@
 ﻿namespace MyWebApplicationServer.DTO.User
 {
+    /// <summary>
+    /// Модель DTO для ответа по авторизации
+    /// </summary>
     public class AuthResponseDto
     {
         /// <summary>

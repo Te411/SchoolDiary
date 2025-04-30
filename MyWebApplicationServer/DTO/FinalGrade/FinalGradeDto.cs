@@ -3,6 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyWebApplicationServer.DTO.FinalGrade
 {
+    /// <summary>
+    /// Общая модель DTO для отображения итоговой оценки
+    /// </summary>
     public class FinalGradeDto
     {
         /// <summary>

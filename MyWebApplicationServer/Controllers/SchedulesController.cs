@@ -568,7 +568,6 @@ namespace MyWebApplicationServer.Controllers
            {
                var classEntity = await _context.Class
                    .FirstOrDefaultAsync(c => c.Name == addScheduleDto.ClassName);
-
        
                if (classEntity == null)
                {
@@ -862,7 +861,7 @@ namespace MyWebApplicationServer.Controllers
         //            Details = ex.Message
         //        });
         //    }
-        //
+        //n
         //}
     }
 }

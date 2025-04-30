@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,8 @@ using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MyWebApplicationServer.Data;
+using MyWebApplicationServer.DTO.FinalGrade;
+using MyWebApplicationServer.DTO.Student;
 using MyWebApplicationServer.DTO.User;
 using Project.MyWebApplicationServer.Models;
 
@@ -27,14 +30,27 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
-        /// GET: api/Users
         /// Получить всех пользователей
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
-            return await _context.Users.ToListAsync();
+            return await _context.Users
+                .Select(u => new UserDto
+                {
+                    UserId = u.UserId,
+                    Email = u.Email,
+                    Password = u.Password,
+                    Name = u.Name,
+                    Login = u.Login,
+                    InActive = u.InActive,
+                    Roles = _context.UserRoles
+                        .Where(ur => ur.UserId == u.UserId)
+                        .Select(ur => ur.Role.RoleName)
+                        .ToList()
+                })
+                .ToListAsync();
         }
 
         /// <summary>
@@ -101,14 +117,25 @@ namespace MyWebApplicationServer.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserDto userDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             if (await _context.Users.AnyAsync(u => u.Login == userDto.Login))
             {
-                return BadRequest("Логин уже занят");
+                return BadRequest(new
+                {
+                    message = "Логин уже занят"
+                });
             }
 
             if (await _context.Users.AnyAsync(u => u.Email == userDto.Email))
             {
-                return BadRequest("Email уже занят");
+                return BadRequest(new
+                {
+                    message = "Email уже занят"
+                });
             }
 
             var user = new User
@@ -145,14 +172,15 @@ namespace MyWebApplicationServer.Controllers
 
                 if (userDto.Roles.Contains("Студент"))
                 {
-                    if (!userDto.ClassId.HasValue)
+                    if (userDto.ClassName == null)
                     {
-                        return BadRequest("Для студента требуется ClassId");
+                        return BadRequest("Для студента требуется ClassName");
                     }
-                    var classExists = await _context.Class
-                        .AnyAsync(c => c.ClassId == userDto.ClassId.Value);
 
-                    if (!classExists)
+                    var classExists = await _context.Class
+                        .FirstOrDefaultAsync(c => c.Name == userDto.ClassName);
+
+                    if (classExists == null)
                     {
                         return BadRequest("Указанный класс не существует");
                     }
@@ -160,7 +188,7 @@ namespace MyWebApplicationServer.Controllers
                     var student = new Student
                     {
                         UserId = user.UserId,
-                        ClassId = userDto.ClassId.Value
+                        ClassId = classExists.ClassId,
                     };
 
                     _context.Student.Add(student);
@@ -174,10 +202,18 @@ namespace MyWebApplicationServer.Controllers
                     });
                 }
 
+                if (userDto.Roles.Contains("Завуч"))
+                {
+                    return BadRequest("Вы не можете создать завуча");
+                }
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return CreatedAtAction(nameof(GetUsers), user);
+                return Ok(new
+                {
+                    message = "Пользователь успешно создан"
+                });
             }
             catch (DbUpdateException dbEx)
             {
@@ -258,20 +294,21 @@ namespace MyWebApplicationServer.Controllers
                 // Если нужны будут роли
                 // UpdateRoleForQuery(userId, UpdateuUserDto);
 
-                if (UpdateUserDto.ClassId != null)
+                if (UpdateUserDto.ClassName != null)
                 {
                     var student = await _context.Student.FirstOrDefaultAsync(s => s.UserId == user.UserId);
                     if (student != null)
                     {
                         var classExists = await _context.Class
-                            .AnyAsync(c => c.ClassId == UpdateUserDto.ClassId.Value);
+                            .Where(c => c.Name == UpdateUserDto.ClassName)
+                            .FirstOrDefaultAsync();
 
-                        if (!classExists)
+                        if (classExists == null)
                         {
                             return BadRequest("Указанный класс не существует");
                         }
 
-                        student.ClassId = UpdateUserDto.ClassId.Value;
+                        student.ClassId = classExists.ClassId;
                         _context.Student.Update(student);
                     }
                 }
@@ -377,10 +414,17 @@ namespace MyWebApplicationServer.Controllers
         public async Task<ActionResult<User>> DeleteUser(Guid userId)
         {
             var user = await _context.Users.FindAsync(userId);
-           
+
             if (user == null)
             {
                 return NotFound("Такого пользователя не существует");
+            }
+
+            var zavuch = await _context.Zavuch.FirstOrDefaultAsync(s => s.UserId == userId);
+
+            if (zavuch != null)
+            {
+                return BadRequest("Завуча удалить нельзя!");
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -406,7 +450,10 @@ namespace MyWebApplicationServer.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return NoContent();
+                return Ok(new
+                {
+                    message = "Пользователь успешно удален"
+                });
             }
             catch (DbUpdateException dbEx)
             {
@@ -426,6 +473,36 @@ namespace MyWebApplicationServer.Controllers
             }
         }
 
+        /// <summary>
+        /// Получить общую информацию о пользователе
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("GeneralInfo/{userId}")]
+        public async Task<ActionResult<IEnumerable<UserGeneralInfoDto>>> GetGeneralInfoStudent(Guid userId)
+        {
+            var student = await _context.Student
+                .Where(s => s.User.UserId == userId)
+                .Select(s => s.Class.Name)
+                .FirstOrDefaultAsync();
 
+            var user = await _context.Users
+                .Where(u => u.UserId == userId)
+                .Select(u => new UserGeneralInfoDto
+                {
+                    Name = u.Name,
+                    Email = u.Email,
+                    ClassName = student,
+                })
+                .ToListAsync();
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return user;
+        }
     }
 }
+

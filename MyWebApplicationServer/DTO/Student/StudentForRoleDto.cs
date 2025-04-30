@@ -2,6 +2,9 @@
 
 namespace MyWebApplicationServer.DTO.Student
 {
+    /// <summary>
+    /// Модель DTO для студента с ролью и классом
+    /// </summary>
     public class StudentForRoleDto
     {
         /// <summary>

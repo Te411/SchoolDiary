@@ -2,6 +2,9 @@
 
 namespace MyWebApplicationServer.DTO.Subject
 {
+    /// <summary>
+    /// Модель DTO для отображения в оценке
+    /// </summary>
     public class SubjectForGradeDto
     {
         /// <summary>

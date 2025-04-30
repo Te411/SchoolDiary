@@ -4,6 +4,9 @@ using MyWebApplicationServer.DTO.Student;
 
 namespace MyWebApplicationServer.DTO.Grade
 {
+    /// <summary>
+    /// Общая модель DTO
+    /// </summary>
     public class GradeDto
     {
         /// <summary>

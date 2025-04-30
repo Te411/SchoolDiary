@@ -2,13 +2,16 @@
 
 namespace MyWebApplicationServer.DTO.User
 {
+    /// <summary>
+    /// Модель DTO для создания пользователя
+    /// </summary>
     public class CreateUserDto
     {
         /// <summary>
         /// Почта
         /// </summary>
         [Required]
-        [EmailAddress]
+        [EmailAddress(ErrorMessage = "Некорректный формат email")]
         public string Email { get; set; }
 
         /// <summary>
@@ -38,6 +41,6 @@ namespace MyWebApplicationServer.DTO.User
         /// <summary>
         /// Уникальный индентификатор класса
         /// </summary>
-        public Guid? ClassId { get; set; }
+        public string? ClassName { get; set; }
     }
 }

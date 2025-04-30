@@ -136,13 +136,13 @@ namespace MyWebApplicationServer.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("GeneralInfo/{id}")]
-        public async Task<ActionResult<IEnumerable<StudentGeneralInfo>>> GetGeneralInfoStudent(Guid id)
+        public async Task<ActionResult<IEnumerable<StudentGeneralInfoDto>>> GetGeneralInfoStudent(Guid id)
         {
             var student = await _context.Student
                 .Where(s => s.StudentId == id)
                 .Include(s => s.User)
                 .Include(s => s.Class)
-                .Select(s => new StudentGeneralInfo
+                .Select(s => new StudentGeneralInfoDto
                 {
                     Name = s.User.Name,
                     Email = s.User.Email,

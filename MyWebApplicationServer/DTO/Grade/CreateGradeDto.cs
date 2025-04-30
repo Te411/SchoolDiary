@@ -2,6 +2,9 @@
 
 namespace MyWebApplicationServer.DTO.Grade
 {
+    /// <summary>
+    /// Модель DTO для формы создания оценки
+    /// </summary>
     public class CreateGradeDto
     {
         /// <summary>

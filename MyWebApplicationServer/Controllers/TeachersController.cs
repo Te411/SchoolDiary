@@ -28,13 +28,13 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpGet("GeneralInfo/{id}")]
-        public async Task<ActionResult<IEnumerable<TeacherGeneralInfo>>> GetGeneralInfoTeacher(Guid id)
+        [HttpGet("GeneralInfo/{userId}")]
+        public async Task<ActionResult<IEnumerable<TeacherGeneralInfoDto>>> GetGeneralInfoTeacher(Guid userId)
         {
             var teacher = await _context.Teacher
-                .Where(t => t.TeacherId == id)
+                .Where(t => t.UserId == userId)
                 .Include(t => t.User)
-                .Select(t => new TeacherGeneralInfo
+                .Select(t => new TeacherGeneralInfoDto
                 {
                     Name = t.User.Name,
                     Email = t.User.Email,
