@@ -1,5 +1,8 @@
 ﻿namespace MyWebApplicationServer.DTO.Student
 {
+    /// <summary>
+    /// Модель DTO для отображения студента в оценках
+    /// </summary>
     public class StudentForGradeDto
     {
         /// <summary>

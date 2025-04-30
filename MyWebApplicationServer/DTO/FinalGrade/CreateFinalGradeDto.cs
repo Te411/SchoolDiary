@@ -2,6 +2,9 @@
 
 namespace MyWebApplicationServer.DTO.FinalGrade
 {
+    /// <summary>
+    /// Модель DTO для формы создания итоговой оценки
+    /// </summary>
     public class CreateFinalGradeDto
     {
         /// <summary>

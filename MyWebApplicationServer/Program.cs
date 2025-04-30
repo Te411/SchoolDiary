@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
 using System.Reflection;
@@ -29,7 +30,35 @@ namespace Project.MyWebApplicationServer
                 });
             });
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .ConfigureApiBehaviorOptions(options =>
+                {
+                    options.InvalidModelStateResponseFactory = context =>
+                    {
+                        var errors = context.ModelState
+                            .Where(e => e.Value.Errors.Count > 0)
+                            .ToDictionary(
+                                kvp => kvp.Key,
+                                kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToList()
+                            );
+
+                        string message = "Ошибка валидации";
+                        if (errors.ContainsKey("Email"))
+                        {
+                            message = errors["Email"].First();
+                        }
+                        else
+                        {
+                            var firstError = errors.FirstOrDefault();
+                            if (firstError.Value != null)
+                            {
+                                message = firstError.Value.First();
+                            }
+                        }
+
+                        return new BadRequestObjectResult(new { message });
+                    };
+                });
 
             builder.Services.AddDbContext<LibraryContext>(opt =>
                             opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

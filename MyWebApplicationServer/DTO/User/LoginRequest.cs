@@ -1,5 +1,8 @@
 ﻿namespace MyWebApplicationServer.DTO.User
 {
+    /// <summary>
+    /// Модель DTO для формы авторизации
+    /// </summary>
     public class LoginRequest
     {
         /// <summary>

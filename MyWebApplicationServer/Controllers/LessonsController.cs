@@ -59,6 +59,22 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
+        /// Получить все кабинеты в которых проходят уроки
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("Room")]
+        public async Task<ActionResult<IEnumerable<LessonRoomDto>>> GetRoom()
+        {
+            return await _context.Lesson
+                .Select(l => new LessonRoomDto
+                {
+                    Room = l.Room,
+                })
+                .Distinct()
+                .ToListAsync();
+        }
+
+        /// <summary>
         /// получить уроки по названию предмета
         /// </summary>
         /// <param name="id"></param>

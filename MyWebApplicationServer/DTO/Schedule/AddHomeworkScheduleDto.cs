@@ -1,5 +1,8 @@
 ﻿namespace MyWebApplicationServer.DTO.Schedule
 {
+    /// <summary>
+    /// Модель DTO для формы заполнения домашнего задания через расписание
+    /// </summary>
     public class AddHomeworkScheduleDto
     {
         /// <summary>

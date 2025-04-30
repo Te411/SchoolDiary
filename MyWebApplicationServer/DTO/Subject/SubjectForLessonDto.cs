@@ -1,5 +1,8 @@
 ﻿namespace MyWebApplicationServer.DTO.Subject
 {
+    /// <summary>
+    /// Модель DTO для отображения в уроке
+    /// </summary>
     public class SubjectForLessonDto
     {
         /// <summary>

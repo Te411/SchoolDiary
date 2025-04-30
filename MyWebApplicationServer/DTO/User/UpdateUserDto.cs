@@ -2,6 +2,9 @@
 
 namespace MyWebApplicationServer.DTO.User
 {
+    /// <summary>
+    /// Модель DTO для обновления пользователя
+    /// </summary>
     public class UpdateUserDto
     {
         /// <summary>
@@ -33,6 +36,6 @@ namespace MyWebApplicationServer.DTO.User
         /// <summary>
         /// Уникальный индентификатор класса
         /// </summary>
-        public Guid? ClassId { get; set; }
+        public string? ClassName { get; set; }
     }
 }
