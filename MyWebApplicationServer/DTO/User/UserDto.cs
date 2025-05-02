@@ -35,6 +35,11 @@ namespace MyWebApplicationServer.DTO.User
         public string Login { get; set; }
 
         /// <summary>
+        /// Название класса
+        /// </summary>
+        public string? ClassName { get; set; }
+
+        /// <summary>
         /// Статус активности
         /// </summary>
         [DefaultValue(false)]

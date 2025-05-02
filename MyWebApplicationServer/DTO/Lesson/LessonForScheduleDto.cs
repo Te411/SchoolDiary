@@ -35,6 +35,6 @@
         /// <summary>
         /// Кабинет
         /// </summary>
-        public string? Room { get; set; }
+        public string? RoomName { get; set; }
     }
 }

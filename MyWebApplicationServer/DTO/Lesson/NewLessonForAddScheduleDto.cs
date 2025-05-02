@@ -18,9 +18,9 @@
         public string SubjectName { get; set; }
 
         /// <summary>
-        /// Уникальный идентификатор учителя
+        /// Имя учителя
         /// </summary>
-        public Guid TeacherId { get; set; }
+        public string TeacherName { get; set; }
 
         /// <summary>
         /// Начало урока
@@ -33,13 +33,8 @@
         public TimeSpan EndTime { get; set; }
 
         /// <summary>
-        /// Домашнее задание
-        /// </summary>
-        public string? Homework { get; set; }
-
-        /// <summary>
         /// Кабинет
         /// </summary>
-        public string? Room { get; set; }
+        public string RoomName { get; set; }
     }
 }

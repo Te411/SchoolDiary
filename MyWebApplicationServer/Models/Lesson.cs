@@ -48,8 +48,7 @@ namespace Project.MyWebApplicationServer.Models
         /// <summary>
         /// Кабинет
         /// </summary>
-        [MaxLength(10)]
-        public string? Room { get; set; }
+        public Guid? RoomId { get; set; }
 
         /// <summary>
         /// Предмет
@@ -62,5 +61,11 @@ namespace Project.MyWebApplicationServer.Models
         /// </summary>
         [ForeignKey("TeacherId")]
         public virtual Teacher Teacher { get; set; }
+
+        /// <summary>
+        /// Кабинет
+        /// </summary>
+        [ForeignKey("RoomId")]
+        public virtual Room? Room { get; set; }
     }
 }

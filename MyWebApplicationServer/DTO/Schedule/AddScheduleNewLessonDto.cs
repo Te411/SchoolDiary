@@ -12,7 +12,7 @@ namespace MyWebApplicationServer.DTO.Schedule
         /// <summary>
         /// Уникальный индентификатор недели
         /// </summary>
-        public int WeekId { get; set; }
+        // public int WeekId { get; set; }
 
         /// <summary>
         /// Список уроков для заданного дня

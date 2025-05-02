@@ -10,16 +10,24 @@ using MyWebApplicationServer.DTO.Lesson;
 using MyWebApplicationServer.DTO.Schedule;
 using MyWebApplicationServer.DTO.Subject;
 using MyWebApplicationServer.DTO.Teacher;
+using MyWebApplicationServer.DTO.Room;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "Урок"
+    /// </summary>
     [Route("api/Lesson")]
     [ApiController]
     public class LessonsController : ControllerBase
     {
         private readonly LibraryContext _context;
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public LessonsController(LibraryContext context)
         {
             _context = context;
@@ -36,6 +44,7 @@ namespace MyWebApplicationServer.Controllers
                 .Include(l=>l.Teacher)
                     .ThenInclude(t=>t.User)
                 .Include(l=>l.Subject)
+                .Include(l => l.Room)
                 .Select(l => new LessonDto
                 {
                     LessonId = l.LessonId,
@@ -44,7 +53,10 @@ namespace MyWebApplicationServer.Controllers
                     StartTime = l.StartTime,
                     EndTime = l.EndTime,
                     Homework = l.Homework,
-                    Room = l.Room,
+                    Room = l.Room != null ? new RoomDto
+                    {
+                        Name = l.Room.Name,
+                    } : null,
                     Subject = new SubjectForLessonDto
                     {
                         Name = l.Subject.Name
@@ -68,7 +80,7 @@ namespace MyWebApplicationServer.Controllers
             return await _context.Lesson
                 .Select(l => new LessonRoomDto
                 {
-                    Room = l.Room,
+                    RoomName = l.Room.Name,
                 })
                 .Distinct()
                 .ToListAsync();
@@ -77,7 +89,7 @@ namespace MyWebApplicationServer.Controllers
         /// <summary>
         /// получить уроки по названию предмета
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="subjectName"></param>
         /// <returns></returns>
         [HttpGet("{subjectName}")]
         public async Task<ActionResult<IEnumerable<LessonDto>>> GetLesson(string subjectName)
@@ -95,7 +107,10 @@ namespace MyWebApplicationServer.Controllers
                     StartTime = l.StartTime,
                     EndTime = l.EndTime,
                     Homework = l.Homework,
-                    Room = l.Room,
+                    Room = l.Room != null ? new RoomDto
+                    {
+                        Name = l.Room.Name,
+                    } : null,
                     Subject = new SubjectForLessonDto
                     {
                         Name = l.Subject.Name
