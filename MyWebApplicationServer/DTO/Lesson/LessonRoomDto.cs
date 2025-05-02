@@ -11,6 +11,6 @@ namespace MyWebApplicationServer.DTO.Lesson
         /// Кабинет
         /// </summary>
         [MaxLength(10)]
-        public string Room { get; set; }
+        public string RoomName { get; set; }
     }
 }

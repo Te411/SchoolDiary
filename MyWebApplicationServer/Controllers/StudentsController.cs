@@ -97,6 +97,32 @@ namespace MyWebApplicationServer.Controllers
         }
 
         /// <summary>
+        /// Получить студента по названию класса
+        /// </summary>
+        /// <param name="сlassName"></param>
+        /// <returns></returns>
+        [HttpGet("ClassName/{сlassName}")]
+        public async Task<ActionResult<IEnumerable<StudentForGradeDto>>> GetStudentByUserId(string сlassName)
+        {
+            var student = await _context.Student
+                .Where(s => s.Class.Name == сlassName)
+                .Include(s => s.User)
+                .Select(s => new StudentForGradeDto
+                {
+                    StudentId = s.StudentId,
+                    Name = s.User.Name
+                })
+                .ToListAsync();
+
+            if (student == null)
+            {
+                return NotFound();
+            }
+
+            return student;
+        }
+
+        /// <summary>
         /// Добавить нового студента
         /// </summary>
         /// <param name="student"></param>

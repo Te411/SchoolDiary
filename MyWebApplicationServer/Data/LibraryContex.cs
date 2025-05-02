@@ -86,6 +86,11 @@ namespace MyWebApplicationServer.Data
         public DbSet<FinalGrade> FinalGrade { get; set; }
 
         /// <summary>
+        /// Таблицы - "Кабинет"
+        /// </summary>
+        public DbSet<Room> Room { get; set; }
+
+        /// <summary>
 		/// Конфигурационный файл
 		/// </summary>
 		private readonly IConfiguration _configuration;
@@ -226,6 +231,13 @@ namespace MyWebApplicationServer.Data
                     .HasMaxLength(255);
             });
 
+            modelBuilder.Entity<Room>(entity =>
+            {
+                entity.HasKey(r => r.RoomId);
+                entity.Property(r => r.Name)
+                    .HasMaxLength(255);
+            });
+
             modelBuilder.Entity<SubjectClasses>(entity =>
             {
                 entity.HasKey(sc => new {sc.ClassId, sc.SubjectId});
@@ -271,8 +283,6 @@ namespace MyWebApplicationServer.Data
                     .IsRequired();
                 entity.Property(l => l.Homework)
                     .HasMaxLength(255);
-                entity.Property(l => l.Room)
-                    .HasMaxLength(10);
             });
 
             modelBuilder.Entity<WeekDay>(entity =>

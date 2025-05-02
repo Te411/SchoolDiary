@@ -40,6 +40,8 @@ namespace MyWebApplicationServer.Controllers
                 .Include(s => s.Lesson)
                     .ThenInclude(l => l.Teacher)
                         .ThenInclude(t => t.User)
+                .Include(s => s.Lesson)
+                    .ThenInclude(l => l.Room)
                 .OrderBy(s => s.WeekDayId)
                 .ThenBy(s => s.LessonOrder)
                 .ToListAsync();
@@ -71,7 +73,7 @@ namespace MyWebApplicationServer.Controllers
                                     StartTime = s.Lesson.StartTime,
                                     EndTime = s.Lesson.EndTime,
                                     Homework = s.Lesson.Homework ?? null,
-                                    Room = s.Lesson.Room?.Trim()
+                                    RoomName = s.Lesson.Room != null ? s.Lesson.Room.Name.Trim() : null
                                 })
                                 .ToList()
                         })
@@ -101,6 +103,8 @@ namespace MyWebApplicationServer.Controllers
                 .Include(s => s.Lesson)
                     .ThenInclude(l => l.Teacher)
                         .ThenInclude(t => t.User)
+                .Include(s => s.Lesson)
+                    .ThenInclude(l => l.Room)
                 .OrderBy(s => s.WeekDayId)
                 .ThenBy(s => s.LessonOrder)
                 .ToListAsync();
@@ -133,7 +137,7 @@ namespace MyWebApplicationServer.Controllers
                                     StartTime = s.Lesson.StartTime,
                                     EndTime = s.Lesson.EndTime,
                                     Homework = s.Lesson.Homework ?? null,
-                                    Room = s.Lesson.Room?.Trim()
+                                    RoomName = s.Lesson.Room != null ? s.Lesson.Room.Name.Trim() : null
                                 })
                                 .ToList()
                         })
@@ -154,9 +158,9 @@ namespace MyWebApplicationServer.Controllers
         {
             var teacher = await _context.Teacher.FirstOrDefaultAsync(t => t.UserId == userId);
 
-            if (teacher == null)
+            if (teacher == null) 
             {
-                return BadRequest($"Учителя с id {teacher.TeacherId} не найдено");
+                return BadRequest($"Учителя с id не найдено");
             }
 
             var schedule = await _context.Schedule
@@ -170,6 +174,8 @@ namespace MyWebApplicationServer.Controllers
                     .Include(s => s.Lesson)
                         .ThenInclude(l => l.Teacher)
                             .ThenInclude(t => t.User)
+                     .Include(s => s.Lesson)
+                        .ThenInclude(l => l.Room)
                     .OrderBy(s => s.WeekDayId)
                     .ThenBy(s => s.LessonOrder)
                     .ToListAsync();
@@ -202,7 +208,7 @@ namespace MyWebApplicationServer.Controllers
                                     StartTime = s.Lesson.StartTime,
                                     EndTime = s.Lesson.EndTime,
                                     Homework = s.Lesson.Homework ?? null,
-                                    Room = s.Lesson.Room?.Trim()
+                                    RoomName = s.Lesson.Room != null ? s.Lesson.Room.Name.Trim() : null
                                 })
                                 .ToList()
                         })
@@ -234,6 +240,8 @@ namespace MyWebApplicationServer.Controllers
                 .Include(s => s.Lesson)
                     .ThenInclude(l => l.Teacher)
                         .ThenInclude(t => t.User)
+                .Include(s => s.Lesson)
+                    .ThenInclude(l => l.Room)
                 .OrderBy(s => s.WeekDayId)
                 .ThenBy(s => s.LessonOrder)
                 .ToListAsync();
@@ -266,7 +274,7 @@ namespace MyWebApplicationServer.Controllers
                                     StartTime = s.Lesson.StartTime,
                                     EndTime = s.Lesson.EndTime,
                                     Homework = s.Lesson.Homework ?? null,
-                                    Room = s.Lesson.Room?.Trim()
+                                    RoomName = s.Lesson.Room != null ? s.Lesson.Room.Name.Trim() : null
                                 })
                                 .ToList()
                         })
@@ -292,7 +300,7 @@ namespace MyWebApplicationServer.Controllers
 
                 if (weekEntity == null)
                 {
-                    return NotFound($"Недели '{addHomeworkDto.WeekId}' не найдено");
+                    return NotFound($"Неделя не найдена");
                 }
 
                 var classEntity = await _context.Class
@@ -300,7 +308,7 @@ namespace MyWebApplicationServer.Controllers
 
                 if (classEntity == null)
                 {
-                    return NotFound($"Класс с именем '{addHomeworkDto.ClassName}' не найден");
+                    return NotFound($"Класс не найден");
                 }
 
                 var schedule = await _context.Schedule
@@ -372,7 +380,7 @@ namespace MyWebApplicationServer.Controllers
 
                 if (weekEntity == null)
                 {
-                    return NotFound($"Недели '{addScheduleDto.WeekId}' не найдено");
+                    return NotFound($"Недели не найдено");
                 }
 
                 var classEntity = await _context.Class
@@ -380,7 +388,7 @@ namespace MyWebApplicationServer.Controllers
        
                 if (classEntity == null)
                 {
-                    return NotFound($"Класса с именем '{addScheduleDto.ClassName}' не существует!");
+                    return NotFound($"Класса не существует!");
                 }
        
                 var weekDay = await _context.WeekDay
@@ -402,7 +410,7 @@ namespace MyWebApplicationServer.Controllers
                     var missingIds = lessonsFromPost.Except(lessons.Select(l => l.LessonId)).ToList();
                     return BadRequest(new
                     {
-                        Message = $"Уроки с ID: {string.Join(", ", missingIds)} не найдены."
+                        Message = $"Уроки с такими ID не найдены."
                     });
                 }
        
@@ -560,192 +568,240 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="addScheduleDto"></param>
         /// <returns></returns>
-       [HttpPost("WithNewLessons")]
-       public async Task<IActionResult> PostScheduleWithNewLesson([FromBody] AddScheduleNewLessonDto addScheduleDto)
-       {
-           using var transaction = _context.Database.BeginTransaction();
-           try
-           {
-               var classEntity = await _context.Class
-                   .FirstOrDefaultAsync(c => c.Name == addScheduleDto.ClassName);
-       
-               if (classEntity == null)
-               {
-                   return NotFound($"Класса с именем '{addScheduleDto.ClassName}' не существует!");
-               }
-       
-               var lessonsByDay = addScheduleDto.Lessons
-                   .GroupBy(l => l.WeekDayId)
-                   .ToDictionary(g => g.Key, g => g.ToList());
-
-               var teacherTimes = new Dictionary<Guid, List<(TimeSpan Start, TimeSpan End)>>();
-
-               foreach (var (weekDayId, dayLessons) in lessonsByDay)
-               {
-                    var week = await _context.Week
-                       .FirstOrDefaultAsync(w => w.WeekId == addScheduleDto.WeekId);
-
-                    if (week == null)
+        [HttpPost("WithNewLessons")]
+        public async Task<IActionResult> PostScheduleWithNewLesson([FromBody] AddScheduleNewLessonDto addScheduleDto)
+        {
+        
+            using var transaction = _context.Database.BeginTransaction();
+            try
+            {
+                var classEntity = await _context.Class
+                    .FirstOrDefaultAsync(c => c.Name == addScheduleDto.ClassName);
+        
+                if (classEntity == null)
+                {
+                    return NotFound($"Класса не существует!");
+                }
+        
+                var lessonsByDay = addScheduleDto.Lessons
+                    .GroupBy(l => l.WeekDayId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+        
+                var teacherTimes = new Dictionary<Guid, List<(TimeSpan Start, TimeSpan End)>>();
+        
+                foreach (var (weekDayId, dayLessons) in lessonsByDay)
+                {
+                     // var week = await _context.Week
+                     //    .FirstOrDefaultAsync(w => w.WeekId == addScheduleDto.WeekId);
+                     // 
+                     // if (week == null)
+                     // {
+                     //     return NotFound($"Неделя с ID {addScheduleDto.WeekId} не найдена.");
+                     // }
+        
+                     var weekDay = await _context.WeekDay
+                        .FirstOrDefaultAsync(w => w.WeekDayId == weekDayId);
+        
+                    if (weekDay == null)
                     {
-                        return NotFound($"Неделя с ID {addScheduleDto.WeekId} не найдена.");
+                        return NotFound("Такого дня недели в расписании нет");
                     }
-
-                    var weekDay = await _context.WeekDay
-                       .FirstOrDefaultAsync(w => w.WeekDayId == weekDayId);
-       
-                   if (weekDay == null)
-                   {
-                       return NotFound("Такого дня недели в расписании нет");
-                   }
-       
-                   var lessonOrders = dayLessons.Select(l => l.LessonOrder).ToList();
-       
-                   if (lessonOrders.Distinct().Count() != lessonOrders.Count)
-                   {
-                       return BadRequest("Повторяющиеся порядковые номера уроков в запросе.");
-                   }
-       
-                   foreach (var item in dayLessons)
-                   {
-                       if (item.StartTime >= item.EndTime)
-                           return BadRequest($"Некорректное время для урока {item.LessonOrder} (день {weekDayId})");
-                   }
-       
-                   for (int i = 0; i < dayLessons.Count; i++)
-                   {
-                       for (int j = i + 1; j < dayLessons.Count; j++)
-                       {
-                           if (IsTimeConflicting(
-                               dayLessons[i].StartTime, dayLessons[i].EndTime,
-                               dayLessons[j].StartTime, dayLessons[j].EndTime))
-                           {
-                               return BadRequest($"Конфликт времени между уроками {dayLessons[i].LessonOrder} и {dayLessons[j].LessonOrder} (день {weekDayId})");
-                           }
-                       }
-                   }
-       
-                   var ordered = dayLessons.OrderBy(l => l.LessonOrder).ToList();
-                   for (int i = 0; i < ordered.Count - 1; i++)
-                   {
-                       if (ordered[i].EndTime > ordered[i + 1].StartTime)
-                           return BadRequest($"Некорректный порядок уроков {ordered[i].LessonOrder} и {ordered[i + 1].LessonOrder} (день {weekDayId})");
-                   }
-       
-                   var existingSchedules = await _context.Schedule
-                       .Include(s => s.Lesson)
-                       .Where(s => s.ClassId == classEntity.ClassId && s.WeekDayId == weekDayId)
-                       .ToListAsync();
-       
-                   var existingOrders = existingSchedules.Select(s => s.LessonOrder).ToHashSet();
-                   var conflictOrders = dayLessons.Where(l => existingOrders.Contains(l.LessonOrder)).ToList();
-                   if (conflictOrders.Any())
-                       return BadRequest($"Занятые номера уроков: {string.Join(", ", conflictOrders.Select(o => o.LessonOrder))} (день {weekDayId})");
-       
-                   var existingTimeSlots = existingSchedules
-                       .Select(s => new { s.Lesson.StartTime, s.Lesson.EndTime })
-                       .ToList();
-       
-                   foreach (var newLesson in dayLessons)
-                   {
-                       if (existingTimeSlots.Any(ts =>
-                           IsTimeConflicting(newLesson.StartTime, newLesson.EndTime, ts.StartTime, ts.EndTime)))
-                       {
-                           return BadRequest("Конфликт с существующими уроками");
-                       }
-                   }
-
-                    foreach (var lessonDto in dayLessons)
+        
+                    var lessonOrders = dayLessons.Select(l => l.LessonOrder).ToList();
+        
+                    if (lessonOrders.Distinct().Count() != lessonOrders.Count)
                     {
-                        var teacherConflicts = await _context.Schedule
+                        return BadRequest("Повторяющиеся порядковые номера уроков в запросе.");
+                    }
+        
+                    foreach (var item in dayLessons)
+                    {
+                        if (item.StartTime >= item.EndTime)
+                            return BadRequest($"Некорректное время для урока {item.LessonOrder} (день {weekDayId})");
+                    }
+        
+                    for (int i = 0; i < dayLessons.Count; i++)
+                    {
+                        for (int j = i + 1; j < dayLessons.Count; j++)
+                        {
+                            if (IsTimeConflicting(
+                                dayLessons[i].StartTime, dayLessons[i].EndTime,
+                                dayLessons[j].StartTime, dayLessons[j].EndTime))
+                            {
+                                return BadRequest($"Конфликт времени между уроками {dayLessons[i].LessonOrder} и {dayLessons[j].LessonOrder} (день {weekDayId})");
+                            }
+                        }
+                    }
+        
+                    var ordered = dayLessons.OrderBy(l => l.LessonOrder).ToList();
+                    for (int i = 0; i < ordered.Count - 1; i++)
+                    {
+                        if (ordered[i].EndTime > ordered[i + 1].StartTime)
+                            return BadRequest($"Некорректный порядок уроков {ordered[i].LessonOrder} и {ordered[i + 1].LessonOrder} (день {weekDayId})");
+                    }
+        
+                    var existingSchedules = await _context.Schedule
+                        .Include(s => s.Lesson)
+                        .Where(s => s.ClassId == classEntity.ClassId && s.WeekDayId == weekDayId)
+                        .ToListAsync();
+        
+                    var existingOrders = existingSchedules.Select(s => s.LessonOrder).ToHashSet();
+                    var conflictOrders = dayLessons.Where(l => existingOrders.Contains(l.LessonOrder)).ToList();
+                    if (conflictOrders.Any())
+                        return BadRequest($"Занятые номера уроков: {string.Join(", ", conflictOrders.Select(o => o.LessonOrder))} (день {weekDayId})");
+        
+                    var existingTimeSlots = existingSchedules
+                        .Select(s => new { s.Lesson.StartTime, s.Lesson.EndTime })
+                        .ToList();
+        
+                    foreach (var newLesson in dayLessons)
+                    {
+                        if (existingTimeSlots.Any(ts =>
+                            IsTimeConflicting(newLesson.StartTime, newLesson.EndTime, ts.StartTime, ts.EndTime)))
+                        {
+                            return BadRequest("Конфликт с существующими уроками");
+                        }
+                    }
+        
+                     foreach (var lessonDto in dayLessons)
+                     {
+                         var teacher = await _context.Teacher
+                             .Where(t => t.User.Name == lessonDto.TeacherName)
+                             .FirstOrDefaultAsync();
+        
+                         if (teacher == null)
+                         {
+                             return NotFound($"Учитель не найден");
+                         }
+
+
+                        // итератор по неделям
+                        var week = await _context.Week.ToListAsync();
+
+                        if(week == null)
+                        {
+                            return BadRequest("Недели не найдены");
+                        }
+
+                        foreach(var item in week)
+                        {
+                            var teacherConflicts = await _context.Schedule
                             .Include(s => s.Lesson)
                             .Include(s => s.Class)
-                            .Where(s => s.Lesson.TeacherId == lessonDto.TeacherId &&
-                                        s.WeekId == addScheduleDto.WeekId &&
+                            .Where(s => s.Lesson.TeacherId == teacher.TeacherId &&
+                                        s.WeekId == item.WeekId &&
                                         s.WeekDayId == weekDayId &&
                                         (lessonDto.StartTime < s.Lesson.EndTime &&
                                         lessonDto.EndTime > s.Lesson.StartTime))
                             .ToListAsync();
 
-                        if (teacherConflicts.Any())
+                            if (teacherConflicts.Any())
+                            {
+                                var conflict = teacherConflicts.First();
+                                return BadRequest($"Учитель уже ведёт урок в это время в другом классе.");
+                            }
+                        }
+                     }
+        
+                }
+        
+                var newLessons = new List<Lesson>();
+                var newSchedules = new List<Schedule>();
+        
+                foreach (var dayLessons in lessonsByDay.Values)
+                {
+                    foreach (var lessonDto in dayLessons)
+                    {
+                        var subject = await _context.Subject
+                            .FirstOrDefaultAsync(s => s.Name == lessonDto.SubjectName);
+        
+                        if(subject == null)
                         {
-                            var conflict = teacherConflicts.First();
-                            return BadRequest($"Учитель уже ведёт урок в это время в другом классе .");
+                            return NotFound($"Предмет не найден");
+                        }
+        
+        
+                        var teacher = await _context.Teacher
+                            .Where(t => t.User.Name == lessonDto.TeacherName)
+                            .FirstOrDefaultAsync();
+        
+                        if (teacher == null)
+                        {
+                            return NotFound($"Учитель не найден");
+                        }
+
+                        var room = await _context.Room
+                            .Where(r => r.Name == lessonDto.RoomName)
+                            .FirstOrDefaultAsync();
+
+                        if (room == null)
+                        {
+                            return NotFound($"Кабинет не найден");
+                        }
+
+                        // итератор на неделю 
+                        var week = await _context.Week.ToListAsync();
+
+                        if (week == null)
+                        {
+                            return BadRequest("Недели не найдены");
+                        }
+
+                        foreach (var item in week)
+                        {
+                            var newLesson = new Lesson
+                            {
+                                LessonId = Guid.NewGuid(),
+                                SubjectId = subject.SubjectId,
+                                TeacherId = teacher.TeacherId,
+                                StartTime = lessonDto.StartTime,
+                                EndTime = lessonDto.EndTime,
+                                RoomId = room.RoomId
+                            };
+                            newLessons.Add(newLesson);
+
+                            newSchedules.Add(new Schedule
+                            {
+                                ScheduleId = Guid.NewGuid(),
+                                ClassId = classEntity.ClassId,
+                                WeekDayId = lessonDto.WeekDayId,
+                                LessonId = newLesson.LessonId,
+                                WeekId = item.WeekId,
+                                LessonOrder = lessonDto.LessonOrder
+                            });
                         }
                     }
-
-               }
-       
-               var newLessons = new List<Lesson>();
-               var newSchedules = new List<Schedule>();
-       
-               foreach (var dayLessons in lessonsByDay.Values)
-               {
-                   foreach (var lessonDto in dayLessons)
-                   {
-                       var subject = await _context.Subject
-                           .FirstOrDefaultAsync(s => s.Name == lessonDto.SubjectName);
-       
-                       if(subject == null)
-                       {
-                           return NotFound($"Предмет {lessonDto.SubjectName} не найден");
-                       }
-       
-                       var teacher = await _context.Teacher
-                           .FirstOrDefaultAsync(t => t.TeacherId == lessonDto.TeacherId);
-       
-                       if (teacher == null)
-                       {
-                           return NotFound($"Учитель с ID {lessonDto.TeacherId} не найден");
-                       }
-       
-                       var newLesson = new Lesson
-                       {
-                           LessonId = Guid.NewGuid(),
-                           SubjectId = subject.SubjectId,
-                           TeacherId = lessonDto.TeacherId,
-                           StartTime = lessonDto.StartTime,
-                           EndTime = lessonDto.EndTime,
-                           Homework = lessonDto.Homework ?? null,
-                           Room = lessonDto.Room?.Trim()
-                       };
-                       newLessons.Add(newLesson);
-       
-                       newSchedules.Add(new Schedule
-                       {
-                           ScheduleId = Guid.NewGuid(),
-                           ClassId = classEntity.ClassId,
-                           WeekDayId = lessonDto.WeekDayId,
-                           LessonId = newLesson.LessonId,
-                           WeekId = addScheduleDto.WeekId,
-                           LessonOrder = lessonDto.LessonOrder
-                       });
-                   }
-               }
-       
-               await _context.Lesson.AddRangeAsync(newLessons);
-               await _context.Schedule.AddRangeAsync(newSchedules);
-               await _context.SaveChangesAsync();
-               await transaction.CommitAsync();
-       
-               return CreatedAtAction(nameof(GetSchedule), new { classId = classEntity.ClassId }, newSchedules);
-           }
-           catch (DbUpdateException dbEx)
-           {
-               return StatusCode(StatusCodes.Status500InternalServerError, new
-               {
-                   Message = "Ошибка при добавлении расписания.",
-                   Details = dbEx.Message
-               });
-           }
-           catch (Exception ex)
-           {
-               return StatusCode(StatusCodes.Status500InternalServerError, new
-               {
-                   Message = "Непредвиденная ошибка!",
-                   Details = ex.Message
-               });
-           }
-       }
+                }
+        
+                await _context.Lesson.AddRangeAsync(newLessons);
+                await _context.Schedule.AddRangeAsync(newSchedules);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+        
+                 return Ok(new
+                 {
+                     message = "Расписание добавлено."
+                 });
+        
+                //return CreatedAtAction(nameof(GetSchedule), new { classId = classEntity.ClassId }, newSchedules);
+            }
+            catch (DbUpdateException dbEx)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Ошибка при добавлении расписания.",
+                    Details = dbEx.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Непредвиденная ошибка!",
+                    Details = ex.Message
+                });
+            }
+        }
 
         /// <summary>
         /// Удаление урока из расписания

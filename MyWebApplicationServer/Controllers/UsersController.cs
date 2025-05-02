@@ -44,6 +44,10 @@ namespace MyWebApplicationServer.Controllers
                     Password = u.Password,
                     Name = u.Name,
                     Login = u.Login,
+                    ClassName = _context.Student
+                        .Where(s => s.UserId == u.UserId)
+                        .Select(s => s.Class.Name)
+                        .FirstOrDefault(),
                     InActive = u.InActive,
                     Roles = _context.UserRoles
                         .Where(ur => ur.UserId == u.UserId)
@@ -316,7 +320,10 @@ namespace MyWebApplicationServer.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok(user);
+                return Ok(new
+                {
+                    message = "Пользователь успешно обновлен"
+                });
             }
             catch (DbUpdateException dbEx)
             {
@@ -459,7 +466,7 @@ namespace MyWebApplicationServer.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    Message = "Ошибка при добавлении пользователя.",
+                    Message = "Ошибка при удалении пользователя.",
                     Details = dbEx.Message
                 });
             }
@@ -479,7 +486,7 @@ namespace MyWebApplicationServer.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("GeneralInfo/{userId}")]
-        public async Task<ActionResult<IEnumerable<UserGeneralInfoDto>>> GetGeneralInfoStudent(Guid userId)
+        public async Task<ActionResult<IEnumerable<UserGeneralInfoDto>>> GetGeneralInfoUser(Guid userId)
         {
             var student = await _context.Student
                 .Where(s => s.User.UserId == userId)
@@ -491,6 +498,8 @@ namespace MyWebApplicationServer.Controllers
                 .Select(u => new UserGeneralInfoDto
                 {
                     Name = u.Name,
+                    Login = u.Login,
+                    Password = u.Password,
                     Email = u.Email,
                     ClassName = student,
                 })

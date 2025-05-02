@@ -1,4 +1,5 @@
-﻿using MyWebApplicationServer.DTO.Subject;
+﻿using MyWebApplicationServer.DTO.Room;
+using MyWebApplicationServer.DTO.Subject;
 using MyWebApplicationServer.DTO.Teacher;
 
 namespace MyWebApplicationServer.DTO.Lesson
@@ -33,12 +34,12 @@ namespace MyWebApplicationServer.DTO.Lesson
         /// <summary>
         /// Домашнее задание
         /// </summary>
-        public string Homework { get; set; }
+        public string? Homework { get; set; }
 
         /// <summary>
         /// Кабинет
         /// </summary>
-        public string Room { get; set; }
+        public RoomDto? Room { get; set; }
 
         /// <summary>
         /// Предмет
