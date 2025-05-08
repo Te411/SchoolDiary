@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
-using MyWebApplicationServer.DTO.Lesson;
-using MyWebApplicationServer.DTO.Schedule;
-using MyWebApplicationServer.DTO.Subject;
-using MyWebApplicationServer.DTO.Teacher;
-using MyWebApplicationServer.DTO.Room;
+using MyWebApplicationServer.DTOs.Lesson;
+using MyWebApplicationServer.DTOs.Schedule;
+using MyWebApplicationServer.DTOs.Subject;
+using MyWebApplicationServer.DTOs.Teacher;
+using MyWebApplicationServer.DTOs.Room;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers

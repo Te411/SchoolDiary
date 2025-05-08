@@ -3,36 +3,50 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MyWebApplicationServer.Data;
-using MyWebApplicationServer.DTO.FinalGrade;
-using MyWebApplicationServer.DTO.Student;
-using MyWebApplicationServer.DTO.User;
+using MyWebApplicationServer.DTOs.FinalGrade;
+using MyWebApplicationServer.DTOs.Student;
+using MyWebApplicationServer.DTOs.User;
+using MyWebApplicationServer.Interfaces;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "пользователь"
+    /// </summary>
     [Route("api/Users")]
     [ApiController]
     public class UsersController : Controller
     {
         private readonly LibraryContext _context;
         private readonly ILogger<UsersController> _logger;
+        private readonly IJwtService _jwtService;
 
-        public UsersController(LibraryContext context, ILogger<UsersController> logger)
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="logger"></param>
+        /// <param name="jwtService"></param>
+        public UsersController(LibraryContext context, ILogger<UsersController> logger, IJwtService jwtService  )
         {
             _context = context;
             _logger = logger;
+            _jwtService = jwtService;
         }
 
         /// <summary>
         /// Получить всех пользователей
         /// </summary>
         /// <returns></returns>
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
@@ -60,12 +74,13 @@ namespace MyWebApplicationServer.Controllers
         /// <summary>
         /// Авторизация
         /// </summary>
-        /// <param name="request">Запрос на авторизацию с учетными данными пользователя.</param>
+        /// <param name="request"></param>
+        /// <param name="hasher"></param>
         /// <returns></returns>
         [HttpPost("authenticate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<AuthResponseDto>> AuthenticateUser([FromBody] LoginRequest request)
+        public async Task<ActionResult<AuthResponseDto>> AuthenticateUser([FromBody] LoginRequest request, [FromServices] IPasswordHasher hasher)
         {
             if (string.IsNullOrEmpty(request.Login) || string.IsNullOrEmpty(request.Password))
             {
@@ -73,11 +88,16 @@ namespace MyWebApplicationServer.Controllers
             }
 
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Login == request.Login && u.Password == request.Password);
+                .FirstOrDefaultAsync(u => u.Login == request.Login);
 
             if (user == null)
             {
                 return NotFound("Пользователь с указанными логином и паролем не найден");
+            }
+
+            if (!hasher.Verify(request.Password, user.Password))
+            {
+                return NotFound("Неверный пароль");
             }
 
             var roles = await _context.UserRoles
@@ -102,12 +122,15 @@ namespace MyWebApplicationServer.Controllers
                 classId = student.ClassId;
             }
 
+            var token = _jwtService.GenerateToken(user.UserId, roles);
+
             return Ok(new AuthResponseDto
             {
                 Message = "Пользователь успешно аутентифицирован",
                 UserId = user.UserId,
                 ClassId = classId,
-                Roles = roles
+                Roles = roles,
+                Token = token
             });
         }
 
@@ -116,10 +139,11 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="userDto"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Завуч")]
         [HttpPost("CreateNewUser")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserDto userDto)
+        public async Task<ActionResult<User>> CreateUser([FromBody] CreateUserDto userDto, [FromServices] IPasswordHasher hasher)
         {
             if (!ModelState.IsValid)
             {
@@ -145,7 +169,7 @@ namespace MyWebApplicationServer.Controllers
             var user = new User
             {
                 Email = userDto.Email,
-                Password = userDto.Password,
+                Password = hasher.Hash(userDto.Password),
                 Name = userDto.Name,
                 Login = userDto.Login,
                 InActive = false
@@ -208,7 +232,10 @@ namespace MyWebApplicationServer.Controllers
 
                 if (userDto.Roles.Contains("Завуч"))
                 {
-                    return BadRequest("Вы не можете создать завуча");
+                    _context.Zavuch.Add(new Zavuch
+                    {
+                        UserId = user.UserId
+                    });
                 }
 
                 await _context.SaveChangesAsync();
@@ -243,6 +270,7 @@ namespace MyWebApplicationServer.Controllers
         /// <param name="userId"></param>
         /// <param name="UpdateUserDto"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Завуч")]
         [HttpPut("UpdateUser/{userId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -408,12 +436,12 @@ namespace MyWebApplicationServer.Controllers
         //    }
         //}
 
-
         /// <summary>
         /// Удалить пользователя по его ID
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Завуч")]
         [HttpDelete("DeleteUser/{userId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -483,8 +511,9 @@ namespace MyWebApplicationServer.Controllers
         /// <summary>
         /// Получить общую информацию о пользователе
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="userId"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("GeneralInfo/{userId}")]
         public async Task<ActionResult<IEnumerable<UserGeneralInfoDto>>> GetGeneralInfoUser(Guid userId)
         {

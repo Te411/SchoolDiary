@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,12 +11,19 @@ using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "Класс"
+    /// </summary>
     [Route("api/Class")]
     [ApiController]
     public class ClassesController : ControllerBase
     {
         private readonly LibraryContext _context;
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public ClassesController(LibraryContext context)
         {
             _context = context;
@@ -25,6 +33,7 @@ namespace MyWebApplicationServer.Controllers
         /// Получить все классы
         /// </summary>
         /// <returns></returns>
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Class>>> GetClass()
         {

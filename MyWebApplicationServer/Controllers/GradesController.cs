@@ -3,23 +3,31 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
-using MyWebApplicationServer.DTO.Grade;
-using MyWebApplicationServer.DTO.Student;
-using MyWebApplicationServer.DTO.Subject;
+using MyWebApplicationServer.DTOs.Grade;
+using MyWebApplicationServer.DTOs.Student;
+using MyWebApplicationServer.DTOs.Subject;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "Оценка"
+    /// </summary>
     [Route("api/Grade")]
     [ApiController]
     public class GradesController : ControllerBase
     {
         private readonly LibraryContext _context;
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public GradesController(LibraryContext context)
         {
             _context = context;
@@ -29,6 +37,7 @@ namespace MyWebApplicationServer.Controllers
         /// Получить все существующие оценки
         /// </summary>
         /// <returns></returns>
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GradeDto>>> GetGrade()
         {
@@ -57,6 +66,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="id">id Оценки</param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("id/{id}")]
         public async Task<ActionResult<IEnumerable<GradeDto>>> GetGrade(Guid id)
         {
@@ -93,6 +103,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="subjectName">Название предмета</param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("subjectName/{subjectName}")]
         public async Task<ActionResult<IEnumerable<GradeDto>>> GetGrade(string subjectName)
         {
@@ -129,6 +140,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="createGradeDto"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Учитель")]
         [HttpPost]
         public async Task<ActionResult<GradeDto>> PostGrade(CreateGradeDto createGradeDto)
         {
@@ -187,6 +199,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="gradeAllStudent"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpPost("GradeAllStudentByClassSubject/")]
         public async Task<ActionResult<IEnumerable<GradeDto>>> GetGradeAllStudentByClassSubject(GradeByClassSubjectDto gradeAllStudent)
         {
@@ -223,6 +236,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="StudentId">id студента</param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("StudentId/{StudentId}")]
         public async Task<ActionResult<IEnumerable<SubjectForGradeDto>>> GetGradeByStudentId(Guid StudentId)
         {
@@ -263,6 +277,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="id">id оценки</param>
         /// <returns></returns>
+        [Authorize(Roles = "Учитель")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGrade(Guid id)
         {

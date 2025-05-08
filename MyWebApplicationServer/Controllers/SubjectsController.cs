@@ -10,12 +10,19 @@ using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
-    [Route("api/[controller]")]
+    /// <summary>
+    /// Контроллер для таблицы "Предмет"
+    /// </summary>
+    [Route("api/Subjects")]
     [ApiController]
     public class SubjectsController : ControllerBase
     {
         private readonly LibraryContext _context;
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public SubjectsController(LibraryContext context)
         {
             _context = context;
