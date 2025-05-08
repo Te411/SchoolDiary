@@ -7,18 +7,26 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
 using Project.MyWebApplicationServer.Models;
-using MyWebApplicationServer.DTO.Schedule;
-using MyWebApplicationServer.DTO.Lesson;
+using MyWebApplicationServer.DTOs.Schedule;
+using MyWebApplicationServer.DTOs.Lesson;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "Расписание"
+    /// </summary>
     [Route("api/Schedules")]
     [ApiController]
     public class SchedulesController : ControllerBase
     {
         private readonly LibraryContext _context;
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public SchedulesController(LibraryContext context)
         {
             _context = context;
@@ -28,6 +36,7 @@ namespace MyWebApplicationServer.Controllers
         /// Получить все расписания
         /// </summary>
         /// <returns></returns>
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ScheduleWeekByClassDto>>> GetSchedule()
         {
@@ -88,7 +97,9 @@ namespace MyWebApplicationServer.Controllers
         /// Получить расписание по id класса и id недели
         /// </summary>
         /// <param name="classId"></param>
+        /// <param name="weekId"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("ByClassId/{classId}/{weekId}")]
         public async Task<ActionResult<List<ScheduleWeekByClassDto>>> GetScheduleByClass(Guid classId, int weekId)
         {
@@ -151,8 +162,10 @@ namespace MyWebApplicationServer.Controllers
         /// <summary>
         /// Получить расписание по id пользователя и id недели
         /// </summary>
-        /// <param name="classId"></param>
+        /// <param name="userId"></param>
+        /// <param name="weekId"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("ByTeacher/{userId}/{weekId}")]
         public async Task<ActionResult<List<ScheduleWeekByTeacherDto>>> GetScheduleByTeacher(Guid userId, int weekId)
         {
@@ -219,14 +232,13 @@ namespace MyWebApplicationServer.Controllers
             return result;
         }
 
-
-
-
         /// <summary>
         /// Получить расписание по имени класса и id недели
         /// </summary>
         /// <param name="className"></param>
+        /// <param name="weekId"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("ByClassName/Correct/{className}/{weekId}")]
         public async Task<ActionResult<List<ScheduleWeekByClassDto>>> GetCorrectSchedule(string className, int weekId)
         {
@@ -290,6 +302,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="addHomeworkDto"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Учитель")]
         [HttpPatch("UpdateHomeworkByClassName")]
         public async Task<IActionResult> UpdateHomework([FromBody] AddHomeworkScheduleDto addHomeworkDto)
         {
@@ -370,6 +383,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="addScheduleDto"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Учитель")]
         [HttpPost("WithOldLessons")]
         public async Task<IActionResult> PostScheduleWithOldLesson([FromBody] AddScheduleDto addScheduleDto)
         {
@@ -562,12 +576,13 @@ namespace MyWebApplicationServer.Controllers
                 });
             }
         }
- 
+
         /// <summary>
         /// Добавление расписания с созданием новых уроков
         /// </summary>
         /// <param name="addScheduleDto"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Учитель")]
         [HttpPost("WithNewLessons")]
         public async Task<IActionResult> PostScheduleWithNewLesson([FromBody] AddScheduleNewLessonDto addScheduleDto)
         {
@@ -811,6 +826,7 @@ namespace MyWebApplicationServer.Controllers
         /// <param name="weekDayId"></param>
         /// <param name="lessonOrder"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Учитель")]
         [HttpDelete("ByClassLesson/{className}/{weekId}/{weekDayId}/{lessonOrder}")]
         public async Task<IActionResult> DeleteScheduleByClassLesson(string className, int weekId, int weekDayId, int lessonOrder)
         {

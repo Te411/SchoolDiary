@@ -6,18 +6,25 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
-using MyWebApplicationServer.DTO.Student;
-using MyWebApplicationServer.DTO.User;
+using MyWebApplicationServer.DTOs.Student;
+using MyWebApplicationServer.DTOs.User;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "Студент"
+    /// </summary>
     [Route("api/Student")]
     [ApiController]
     public class StudentsController : ControllerBase
     {
         private readonly LibraryContext _context;
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public StudentsController(LibraryContext context)
         {
             _context = context;

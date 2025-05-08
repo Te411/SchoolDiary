@@ -3,23 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
-using MyWebApplicationServer.DTO.FinalGrade;
-using MyWebApplicationServer.DTO.Grade;
-using MyWebApplicationServer.DTO.Student;
+using MyWebApplicationServer.DTOs.FinalGrade;
+using MyWebApplicationServer.DTOs.Grade;
+using MyWebApplicationServer.DTOs.Student;
 using MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "Итоговая оценка"
+    /// </summary>
     [Route("api/FinalGrade")]
     [ApiController]
     public class FinalGradesController : ControllerBase
     {
         private readonly LibraryContext _context;
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public FinalGradesController(LibraryContext context)
         {
             _context = context;
@@ -29,6 +37,7 @@ namespace MyWebApplicationServer.Controllers
         /// Получить все итоговые оценки
         /// </summary>
         /// <returns></returns>
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FinalGradeDto>>> GetFinalGrade()
         {
@@ -59,6 +68,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="finalGradeid"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("{finalGradeid}")]
         public async Task<ActionResult<FinalGradeDto>> GetFinalGradeById(Guid finalGradeid)
         {
@@ -97,6 +107,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="studentId"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("FinalGradeByStudentId/{studentId}")]
         public async Task<ActionResult<IEnumerable<FinalGradeDto>>> GetFinalGradeByStudent(Guid studentId)
         {
@@ -135,6 +146,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="createFinalGradeDto"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Учитель")]
         [HttpPost("CreateFinalGrade")]
         public async Task<IActionResult> AddFinalGrade([FromBody] CreateFinalGradeDto createFinalGradeDto)
         {

@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
-using MyWebApplicationServer.DTO.Lesson;
-using MyWebApplicationServer.DTO.Room;
+using MyWebApplicationServer.DTOs.Lesson;
+using MyWebApplicationServer.DTOs.Room;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers

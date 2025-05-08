@@ -6,18 +6,25 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
-using MyWebApplicationServer.DTO.Student;
-using MyWebApplicationServer.DTO.Teacher;
+using MyWebApplicationServer.DTOs.Student;
+using MyWebApplicationServer.DTOs.Teacher;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "Учитель"
+    /// </summary>
     [Route("api/Teacher")]
     [ApiController]
     public class TeachersController : ControllerBase
     {
         private readonly LibraryContext _context;
 
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public TeachersController(LibraryContext context)
         {
             _context = context;
@@ -26,7 +33,7 @@ namespace MyWebApplicationServer.Controllers
         /// <summary>
         /// Получить общую информацию о учителе
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="userId"></param>
         /// <returns></returns>
         [HttpGet("GeneralInfo/{userId}")]
         public async Task<ActionResult<IEnumerable<TeacherGeneralInfoDto>>> GetGeneralInfoTeacher(Guid userId)

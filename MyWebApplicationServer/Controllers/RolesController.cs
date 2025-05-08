@@ -10,12 +10,19 @@ using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
 {
+    /// <summary>
+    /// Контроллер для таблицы "Роль"
+    /// </summary>
     [Route("api/Role")]
     [ApiController]
     public class RolesController : ControllerBase
     {
         private readonly LibraryContext _context;
-
+        
+        /// <summary>
+        /// Конструктор
+        /// </summary>
+        /// <param name="context"></param>
         public RolesController(LibraryContext context)
         {
             _context = context;
