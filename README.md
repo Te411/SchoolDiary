@@ -4,11 +4,12 @@
 - Оптимизация архитектуры проекта ![Progress](https://img.shields.io/badge/Не%20начато-red)
 - Оптимизация базы данных ![Progress](https://img.shields.io/badge/Не%20начато-red)
 ### Безопасность
-- Внедрение JWT-аутентификации ![Progress](https://img.shields.io/badge/В%20разработке-yellow)
-- Хеширование паролей ![Progress](https://img.shields.io/badge/В%20разработке-yellow)
+- Внедрение JWT-аутентификации ![Progress](https://img.shields.io/badge/Реализовано-green)
+- Хеширование паролей ![Progress](https://img.shields.io/badge/Реализовано-green)
 - Логирование подозрительных действий ![Progress](https://img.shields.io/badge/Не%20начато-red)
 ### Архитектура и код
-- Внедрение репозиториев ![Progress](https://img.shields.io/badge/Не%20начато-red)
+- Внедрение репозиториев ![Progress](https://img.shields.io/badge/В%20разработке-yellow)
+- Внедрение Unit Of Work паттерна ![Progress](https://img.shields.io/badge/В%20разработке-yellow)
 - Внедрение AutoMapper для безопасного обмена данными ![Progress](https://img.shields.io/badge/Не%20начато-red)
 ### Производительность
 - Пагинация для списков ![Progress](https://img.shields.io/badge/Не%20начато-red)
