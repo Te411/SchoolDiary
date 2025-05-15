@@ -29,5 +29,10 @@
         /// Класс
         /// </summary>
         public string? ClassName { get; set; }
+
+        /// <summary>
+        /// Роли
+        /// </summary>
+        public List<string> Roles { get; set; }
     }
 }

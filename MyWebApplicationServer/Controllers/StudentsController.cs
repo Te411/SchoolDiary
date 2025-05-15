@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ namespace MyWebApplicationServer.Controllers
         /// Получить всех студентов
         /// </summary>
         /// <returns></returns>
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StudentForRoleDto>>> GetStudent()
         {
@@ -64,6 +66,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<Student>> GetStudentById(Guid id)
         {
@@ -82,6 +85,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("userId/{id}")]
         public async Task<ActionResult<IEnumerable<StudentForGradeDto>>> GetStudentByUserId(Guid id)
         {
@@ -108,6 +112,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="сlassName"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("ClassName/{сlassName}")]
         public async Task<ActionResult<IEnumerable<StudentForGradeDto>>> GetStudentByUserId(string сlassName)
         {
@@ -134,6 +139,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="student"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Завуч")]
         [HttpPost]
         public async Task<ActionResult<Student>> PostStudent(Student student)
         {
@@ -148,6 +154,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Завуч")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteStudent(Guid id)
         {
@@ -168,6 +175,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("GeneralInfo/{id}")]
         public async Task<ActionResult<IEnumerable<StudentGeneralInfoDto>>> GetGeneralInfoStudent(Guid id)
         {

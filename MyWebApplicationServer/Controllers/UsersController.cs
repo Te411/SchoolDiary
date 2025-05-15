@@ -26,6 +26,7 @@ namespace MyWebApplicationServer.Controllers
     public class UsersController : Controller
     {
         private readonly LibraryContext _context;
+        private readonly IUserRepository _userRepository;
         private readonly ILogger<UsersController> _logger;
         private readonly IJwtService _jwtService;
 
@@ -35,11 +36,12 @@ namespace MyWebApplicationServer.Controllers
         /// <param name="context"></param>
         /// <param name="logger"></param>
         /// <param name="jwtService"></param>
-        public UsersController(LibraryContext context, ILogger<UsersController> logger, IJwtService jwtService  )
+        public UsersController(LibraryContext context, ILogger<UsersController> logger, IJwtService jwtService, IUserRepository userRepository)
         {
             _context = context;
             _logger = logger;
             _jwtService = jwtService;
+            _userRepository = userRepository;
         }
 
         /// <summary>
@@ -50,25 +52,8 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
-            return await _context.Users
-                .Select(u => new UserDto
-                {
-                    UserId = u.UserId,
-                    Email = u.Email,
-                    Password = u.Password,
-                    Name = u.Name,
-                    Login = u.Login,
-                    ClassName = _context.Student
-                        .Where(s => s.UserId == u.UserId)
-                        .Select(s => s.Class.Name)
-                        .FirstOrDefault(),
-                    InActive = u.InActive,
-                    Roles = _context.UserRoles
-                        .Where(ur => ur.UserId == u.UserId)
-                        .Select(ur => ur.Role.RoleName)
-                        .ToList()
-                })
-                .ToListAsync();
+            var users = await _userRepository.GetAllUsersWithRolesAsync();
+            return Ok(users);
         }
 
         /// <summary>
@@ -87,8 +72,7 @@ namespace MyWebApplicationServer.Controllers
                 return BadRequest("Логин и пароль обязательны");
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Login == request.Login);
+            var user = await _userRepository.GetByLoginAsync(request.Login);
 
             if (user == null)
             {
@@ -109,8 +93,8 @@ namespace MyWebApplicationServer.Controllers
                 .ToListAsync();
 
             user.InActive = true;
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
+
+            await _userRepository.UpdateAsync(user);
 
             var student = await _context.Student
                 .Include(s => s.Class)
@@ -150,7 +134,7 @@ namespace MyWebApplicationServer.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (await _context.Users.AnyAsync(u => u.Login == userDto.Login))
+            if (await _userRepository.UserExistsByLogin(userDto.Login))
             {
                 return BadRequest(new
                 {
@@ -158,7 +142,7 @@ namespace MyWebApplicationServer.Controllers
                 });
             }
 
-            if (await _context.Users.AnyAsync(u => u.Email == userDto.Email))
+            if (await _userRepository.UserExistsByEmail(userDto.Email))
             {
                 return BadRequest(new
                 {
@@ -178,8 +162,7 @@ namespace MyWebApplicationServer.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                await _userRepository.AddAsync(user);
 
                 foreach (var roleName in userDto.Roles)
                 {
@@ -522,6 +505,14 @@ namespace MyWebApplicationServer.Controllers
                 .Select(s => s.Class.Name)
                 .FirstOrDefaultAsync();
 
+            var roles = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Join(_context.Role,
+                    ur => ur.RoleId,
+                    r => r.RoleId,
+                    (ur, r) => r.RoleName)
+                .ToListAsync();
+
             var user = await _context.Users
                 .Where(u => u.UserId == userId)
                 .Select(u => new UserGeneralInfoDto
@@ -531,6 +522,7 @@ namespace MyWebApplicationServer.Controllers
                     Password = u.Password,
                     Email = u.Email,
                     ClassName = student,
+                    Roles = roles
                 })
                 .ToListAsync();
 
