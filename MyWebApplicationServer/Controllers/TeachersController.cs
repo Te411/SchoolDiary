@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("GeneralInfo/{userId}")]
         public async Task<ActionResult<IEnumerable<TeacherGeneralInfoDto>>> GetGeneralInfoTeacher(Guid userId)
         {

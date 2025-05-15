@@ -9,6 +9,7 @@ using MyWebApplicationServer.Interfaces;
 using System.Reflection;
 using System.Text;
 using MyWebApplicationServer.Services.JWT;
+using MyWebApplicationServer.Repositories;
 
 namespace Project.MyWebApplicationServer
 {
@@ -107,8 +108,24 @@ namespace Project.MyWebApplicationServer
 
             builder.Services.AddEndpointsApiExplorer();
 
+            // Зависимости
             builder.Services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
             builder.Services.AddScoped<IJwtService, JwtService>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
+            builder.Services.AddScoped<IClassRepository, ClassRepository>();
+            builder.Services.AddScoped<IFinalGradeRepository, FinalGradeRepository>();
+            builder.Services.AddScoped<IGradeRepository, GradeRepository>();
+            builder.Services.AddScoped<ILessonRepository, LessonRepository>();
+            builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+            builder.Services.AddScoped<IRoomRepository, RoomRepository>();
+            builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+            builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+            builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
+            builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
+            builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+            builder.Services.AddScoped<IWeekRepository, WeekRepository>();
+            builder.Services.AddScoped<IZavuchRepository, ZavuchRepository>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddSwaggerGen(c =>
             {
@@ -120,7 +137,7 @@ namespace Project.MyWebApplicationServer
                 c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
                 {
                     Description = "Заголовок авторизации JWT с использованием схемы Bearer. Пример: \"Авторизация: Bearer {token}\"",
-                    Name = "Авторизация",
+                    Name = "Authorization",
                     In = Microsoft.OpenApi.Models.ParameterLocation.Header,
                     Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
                     Scheme = "Bearer"

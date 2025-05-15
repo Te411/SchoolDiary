@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
+using MyWebApplicationServer.Interfaces;
+using MyWebApplicationServer.Repositories;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
@@ -18,15 +20,15 @@ namespace MyWebApplicationServer.Controllers
     [ApiController]
     public class ClassesController : ControllerBase
     {
-        private readonly LibraryContext _context;
+        private readonly IClassRepository _classRepository;
 
         /// <summary>
         /// Конструктор
         /// </summary>
-        /// <param name="context"></param>
-        public ClassesController(LibraryContext context)
+        /// <param name="classRepository"></param>
+        public ClassesController(IClassRepository classRepository)
         {
-            _context = context;
+            _classRepository = classRepository;
         }
 
         /// <summary>
@@ -37,7 +39,8 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Class>>> GetClass()
         {
-            return await _context.Class.ToListAsync();
+            var classes = await _classRepository.GetAll();
+            return Ok(classes);
         }
     }
 }

@@ -12,6 +12,7 @@ using MyWebApplicationServer.DTOs.Subject;
 using MyWebApplicationServer.DTOs.Teacher;
 using MyWebApplicationServer.DTOs.Room;
 using Project.MyWebApplicationServer.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MyWebApplicationServer.Controllers
 {
@@ -37,6 +38,7 @@ namespace MyWebApplicationServer.Controllers
         /// Получить все уроки
         /// </summary>
         /// <returns></returns>
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<LessonDto>>> GetLesson()
         {
@@ -74,6 +76,7 @@ namespace MyWebApplicationServer.Controllers
         /// Получить все кабинеты в которых проходят уроки
         /// </summary>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("Room")]
         public async Task<ActionResult<IEnumerable<LessonRoomDto>>> GetRoom()
         {
@@ -91,6 +94,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="subjectName"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("{subjectName}")]
         public async Task<ActionResult<IEnumerable<LessonDto>>> GetLesson(string subjectName)
         {
@@ -137,6 +141,7 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <param name="addHomeworkDto"></param>
         /// <returns></returns>
+        [Authorize(Roles = "Учитель")]
         [HttpPatch("UpdateHomeworkByLessonId")]
         public async Task<IActionResult> UpdateHomework([FromBody] AddHomeworkLessonDto addHomeworkDto)
         {
