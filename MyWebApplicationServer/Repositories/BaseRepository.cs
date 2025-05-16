@@ -28,17 +28,18 @@ namespace MyWebApplicationServer.Repositories
         /// Добавить/создать сущность
         /// </summary>
         /// <param name="entity"></param>
-        public async void Add(T entity)
+        public async Task<T> Add(T entity)
         {
             await _dbSet.AddAsync(entity);
             await _context.SaveChangesAsync();
+            return entity;
         }
 
         /// <summary>
         /// Удалить сущность
         /// </summary>
         /// <param name="id"></param>
-        public async void Delete(Guid id)
+        public async Task Delete(Guid id)
         {
             var entity = await GetById(id);
             if (entity != null)
@@ -81,7 +82,7 @@ namespace MyWebApplicationServer.Repositories
         /// Обновить сущность
         /// </summary>
         /// <param name="entity"></param>
-        public async void Update(T entity)
+        public async Task Update(T entity)
         {
             _dbSet.Update(entity);
             await _context.SaveChangesAsync();

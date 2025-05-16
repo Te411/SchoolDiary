@@ -15,14 +15,5 @@ namespace MyWebApplicationServer.Repositories
         /// </summary>
         /// <param name="context"></param>
         public ClassRepository(LibraryContext context) : base(context) { }
-
-        /// <summary>
-        /// Получить все классы
-        /// </summary>
-        /// <returns></returns>
-        public async Task<IEnumerable<Class>> GetAll()
-        {
-            return await _context.Class.ToListAsync();
-        }
     }
 }

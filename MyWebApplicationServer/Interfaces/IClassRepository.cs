@@ -3,8 +3,7 @@ using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Interfaces
 {
-    public interface IClassRepository
+    public interface IClassRepository : IBaseRepository<Class>
     {
-        Task<IEnumerable<Class>> GetAll();
     }
 }
