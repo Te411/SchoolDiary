@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
 using MyWebApplicationServer.DTOs.Student;
 using MyWebApplicationServer.DTOs.User;
+using MyWebApplicationServer.Interfaces;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
@@ -20,15 +21,15 @@ namespace MyWebApplicationServer.Controllers
     [ApiController]
     public class StudentsController : ControllerBase
     {
-        private readonly LibraryContext _context;
+        private readonly IStudentRepository _studentRepository;
 
         /// <summary>
         /// Конструктор
         /// </summary>
-        /// <param name="context"></param>
-        public StudentsController(LibraryContext context)
+        /// <param name="studentRepository"></param>
+        public StudentsController(IStudentRepository studentRepository)
         {
-            _context = context;
+            _studentRepository = studentRepository;
         }
 
         /// <summary>
@@ -39,26 +40,14 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StudentForRoleDto>>> GetStudent()
         {
+            var allStudents = await _studentRepository.GetAllStudent();
 
-            return await _context.Student
-                .Include(s => s.Class)
-                .Include(s => s.User)
-                .Select(s => new StudentForRoleDto
-                {
-                    StudentId = s.StudentId,
-                    ClassId = s.ClassId,
-                    UserId = s.UserId,
-                    Class = new ClassDto { Name = s.Class.Name },
-                    User = new UserDtoForRole
-                    {
-                        Email = s.User.Email,
-                        Password = s.User.Password,
-                        Name = s.User.Name,
-                        Login = s.User.Login,
-                        InActive = s.User.InActive
-                    }
-                })
-                .ToListAsync();
+            if(allStudents == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(allStudents);
         }
 
         /// <summary>
@@ -70,7 +59,7 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Student>> GetStudentById(Guid id)
         {
-            var student = await _context.Student.FindAsync(id);
+            var student = await _studentRepository.GetById(id);
 
             if (student == null)
             {
@@ -83,55 +72,39 @@ namespace MyWebApplicationServer.Controllers
         /// <summary>
         /// Получить студента по User id
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="userId"></param>
         /// <returns></returns>
         [Authorize]
-        [HttpGet("userId/{id}")]
-        public async Task<ActionResult<IEnumerable<StudentForGradeDto>>> GetStudentByUserId(Guid id)
+        [HttpGet("userId/{userId}")]
+        public async Task<ActionResult<IEnumerable<StudentForGradeDto>>> GetStudentByUserId(Guid userId)
         {
-            var student = await _context.Student
-                .Where(s => s.UserId == id)
-                .Include(s => s.User)
-                .Select(s => new StudentForGradeDto
-                {
-                    StudentId = s.StudentId,
-                    Name = s.User.Name
-                })
-                .ToListAsync();
+            var student = await _studentRepository.GetByUserId(userId);
 
             if (student == null)
             {
                 return NotFound();
             }
 
-            return student;
+            return Ok(student);
         }
 
         /// <summary>
-        /// Получить студента по названию класса
+        /// Получить студентов по названию класса
         /// </summary>
-        /// <param name="сlassName"></param>
+        /// <param name="className">Название класса</param>
         /// <returns></returns>
         [Authorize]
-        [HttpGet("ClassName/{сlassName}")]
-        public async Task<ActionResult<IEnumerable<StudentForGradeDto>>> GetStudentByUserId(string сlassName)
+        [HttpGet("ClassName/{className}")]
+        public async Task<ActionResult<IEnumerable<StudentForGradeDto>>> GetStudentByClassName(string className)
         {
-            var student = await _context.Student
-                .Where(s => s.Class.Name == сlassName)
-                .Include(s => s.User)
-                .Select(s => new StudentForGradeDto
-                {
-                    StudentId = s.StudentId,
-                    Name = s.User.Name
-                })
-                .ToListAsync();
+            var student = await _studentRepository.GetByClassName(className);
 
             if (student == null)
             {
                 return NotFound();
             }
 
-            return student;
+            return Ok(student);
         }
 
         /// <summary>
@@ -143,10 +116,9 @@ namespace MyWebApplicationServer.Controllers
         [HttpPost]
         public async Task<ActionResult<Student>> PostStudent(Student student)
         {
-            _context.Student.Add(student);
-            await _context.SaveChangesAsync();
+            var createdStudent = await _studentRepository.Add(student);
 
-            return CreatedAtAction("GetStudent", new { id = student.StudentId }, student);
+            return CreatedAtAction("GetStudent", new { id = createdStudent.StudentId }, createdStudent);
         }
 
         /// <summary>
@@ -158,15 +130,7 @@ namespace MyWebApplicationServer.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteStudent(Guid id)
         {
-            var student = await _context.Student.FindAsync(id);
-            if (student == null)
-            {
-                return NotFound();
-            }
-
-            _context.Student.Remove(student);
-            await _context.SaveChangesAsync();
-
+            await _studentRepository.Delete(id);
             return NoContent();
         }
 
@@ -179,24 +143,14 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet("GeneralInfo/{id}")]
         public async Task<ActionResult<IEnumerable<StudentGeneralInfoDto>>> GetGeneralInfoStudent(Guid id)
         {
-            var student = await _context.Student
-                .Where(s => s.StudentId == id)
-                .Include(s => s.User)
-                .Include(s => s.Class)
-                .Select(s => new StudentGeneralInfoDto
-                {
-                    Name = s.User.Name,
-                    Email = s.User.Email,
-                    ClassName = s.Class.Name,
-                })
-                .ToListAsync();
+            var generalInfoStudent = await _studentRepository.GetGeneralInfoById(id);
 
-            if (student == null)
+            if (generalInfoStudent == null)
             {
                 return NotFound();
             }
 
-            return student;
+            return Ok(generalInfoStudent);
         }
     }
 }

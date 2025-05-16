@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
 using MyWebApplicationServer.DTOs.Student;
 using MyWebApplicationServer.DTOs.Teacher;
+using MyWebApplicationServer.Interfaces;
+using NuGet.DependencyResolver;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
@@ -20,15 +22,15 @@ namespace MyWebApplicationServer.Controllers
     [ApiController]
     public class TeachersController : ControllerBase
     {
-        private readonly LibraryContext _context;
+        private readonly ITeacherRepository _teacherRepository;
 
         /// <summary>
         /// Конструктор
         /// </summary>
-        /// <param name="context"></param>
-        public TeachersController(LibraryContext context)
+        /// <param name="teacherRepository"></param>
+        public TeachersController(ITeacherRepository teacherRepository)
         {
-            _context = context;
+            _teacherRepository = teacherRepository;
         }
 
         /// <summary>
@@ -38,24 +40,16 @@ namespace MyWebApplicationServer.Controllers
         /// <returns></returns>
         [Authorize]
         [HttpGet("GeneralInfo/{userId}")]
-        public async Task<ActionResult<IEnumerable<TeacherGeneralInfoDto>>> GetGeneralInfoTeacher(Guid userId)
+        public async Task<ActionResult<TeacherGeneralInfoDto>> GetGeneralInfoTeacher(Guid userId)
         {
-            var teacher = await _context.Teacher
-                .Where(t => t.UserId == userId)
-                .Include(t => t.User)
-                .Select(t => new TeacherGeneralInfoDto
-                {
-                    Name = t.User.Name,
-                    Email = t.User.Email,
-                })
-                .ToListAsync();
+            var teacher = await _teacherRepository.GetTeacherInfoByUserIdAsync(userId);
 
             if (teacher == null)
             {
                 return NotFound();
             }
 
-            return teacher;
+            return Ok(teacher);
         }
     }
 }

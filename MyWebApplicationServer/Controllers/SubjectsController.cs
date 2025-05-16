@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
+using MyWebApplicationServer.Interfaces;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
@@ -18,15 +19,15 @@ namespace MyWebApplicationServer.Controllers
     [ApiController]
     public class SubjectsController : ControllerBase
     {
-        private readonly LibraryContext _context;
+        private readonly ISubjectRepository _subjectRepository;
 
         /// <summary>
         /// Конструктор
         /// </summary>
         /// <param name="context"></param>
-        public SubjectsController(LibraryContext context)
+        public SubjectsController(ISubjectRepository subjectRepository)
         {
-            _context = context;
+            _subjectRepository = subjectRepository;
         }
 
         /// <summary>
@@ -37,7 +38,7 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Subject>>> GetSubject()
         {
-            return await _context.Subject.ToListAsync();
+            return Ok(await _subjectRepository.GetAll());
         }
     }
 }

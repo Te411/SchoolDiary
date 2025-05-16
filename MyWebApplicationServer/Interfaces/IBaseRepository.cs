@@ -7,8 +7,8 @@ namespace MyWebApplicationServer.Interfaces
         Task<T> GetById(Guid id);
         Task<IEnumerable<T>> GetAll();
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
-        void Add(T entity);
-        void Update(T entity);
-        void Delete(Guid id);
+        Task<T> Add(T entity);
+        Task Update(T entity);
+        Task Delete(Guid id);
     }
 }

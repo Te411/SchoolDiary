@@ -2,11 +2,7 @@
 
 namespace MyWebApplicationServer.Interfaces
 {
-    public interface IRoleRepository
+    public interface IRoleRepository : IBaseRepository<Role>
     {
-        Task Add(Role role);
-        Task<IEnumerable<Role>> GetAll();
-
-        Task<Role> GetById(Guid id);
     }
 }

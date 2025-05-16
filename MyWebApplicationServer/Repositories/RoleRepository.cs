@@ -12,15 +12,5 @@ namespace MyWebApplicationServer.Repositories
         /// </summary>
         /// <param name="context"></param>
         public RoleRepository(LibraryContext context) : base(context) { }
-
-        public async Task Add(Role role)
-        {
-            _context.Role.Add(role);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<Role>> GetAll() => await base.GetAll();
-
-        public new async Task<Role> GetById(Guid id) => await base.GetById(id);
     }
 }

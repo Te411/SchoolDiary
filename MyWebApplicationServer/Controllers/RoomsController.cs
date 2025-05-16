@@ -5,10 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Build.Framework;
 using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
 using MyWebApplicationServer.DTOs.Lesson;
 using MyWebApplicationServer.DTOs.Room;
+using MyWebApplicationServer.Interfaces;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
@@ -20,15 +22,15 @@ namespace MyWebApplicationServer.Controllers
     [ApiController]
     public class RoomsController : ControllerBase
     {
-        private readonly LibraryContext _context;
+        private readonly IRoomRepository _roomRepository;
 
         /// <summary>
         /// Конструктор
         /// </summary>
-        /// <param name="context"></param>
-        public RoomsController(LibraryContext context)
+        /// <param name="roomRepository"></param>
+        public RoomsController(IRoomRepository roomRepository)
         {
-            _context = context;
+            _roomRepository = roomRepository;
         }
 
         /// <summary>
@@ -36,16 +38,28 @@ namespace MyWebApplicationServer.Controllers
         /// </summary>
         /// <returns></returns>
         [Authorize]
-        [HttpGet("Room")]
+        [HttpGet()]
         public async Task<ActionResult<IEnumerable<RoomDto>>> GetAllRoom()
         {
-            return await _context.Room
-                .Select(l => new RoomDto
+            try
+            {
+                var allRooms = await _roomRepository.GetAllRooms();
+
+                if(allRooms == null)
                 {
-                    Name = l.Name,
-                })
-                .Distinct()
-                .ToListAsync();
+                    return NotFound();
+                }
+
+                return Ok(allRooms);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    Message = "Непредвиденная ошибка",
+                    Details = ex.Message
+                });
+            }
         }
     }
 }

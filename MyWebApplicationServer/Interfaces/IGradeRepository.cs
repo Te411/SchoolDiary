@@ -1,6 +1,9 @@
-﻿namespace MyWebApplicationServer.Interfaces
+﻿using Project.MyWebApplicationServer.Models;
+
+namespace MyWebApplicationServer.Interfaces
 {
-    public interface IGradeRepository
+    public interface IGradeRepository : IBaseRepository<Grade>
     {
+
     }
 }
