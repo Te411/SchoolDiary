@@ -11,6 +11,7 @@ using MyWebApplicationServer.Data;
 using MyWebApplicationServer.DTOs.FinalGrade;
 using MyWebApplicationServer.DTOs.Grade;
 using MyWebApplicationServer.DTOs.Student;
+using MyWebApplicationServer.Interfaces;
 using MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
@@ -22,15 +23,22 @@ namespace MyWebApplicationServer.Controllers
     [ApiController]
     public class FinalGradesController : ControllerBase
     {
-        private readonly LibraryContext _context;
+        private readonly IFinalGradeRepository _finalGradeRepository;
+        private readonly ISubjectRepository _subjectRepository;
+        private readonly IStudentRepository _studentRepository;
 
         /// <summary>
         /// Конструктор
         /// </summary>
-        /// <param name="context"></param>
-        public FinalGradesController(LibraryContext context)
+        /// <param name="finalGradeRepository"></param>
+        /// <param name="subjectRepository"></param>
+        /// <param name="studentRepository"></param>
+        public FinalGradesController(IFinalGradeRepository finalGradeRepository,
+            ISubjectRepository subjectRepository, IStudentRepository studentRepository)
         {
-            _context = context;
+            _finalGradeRepository = finalGradeRepository;
+            _subjectRepository = subjectRepository;
+            _studentRepository = studentRepository;
         }
 
         /// <summary>
@@ -41,58 +49,26 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FinalGradeDto>>> GetFinalGrade()
         {
-            return await _context.FinalGrade
-                .Include(fg => fg.Subject)
-                .Include(fg => fg.Student)
-                    .ThenInclude(s => s.User)
-                .Select(fg => new FinalGradeDto
-                {
-                    FinalGradeId = fg.FinalGradeId,
-                    StudentId = fg.StudentId,
-                    SubjectId = fg.SubjectId,
-                    SubjectName = fg.Subject.Name,
-                    PeriodType = fg.PeriodType,
-                    Quarter = fg.Quarter,
-                    GradeValue = fg.GradeValue,
-                    Student = new StudentForGradeDto
-                    {
-                        StudentId = fg.Student.StudentId,
-                        Name = fg.Student.User.Name,
-                    }
-                })
-                .ToListAsync();
+            var finalGrades = await _finalGradeRepository.GetAll();
+
+            if(finalGrades == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(finalGrades);
         }
 
         /// <summary>
         /// Получить итоговую оценку по ID
         /// </summary>
-        /// <param name="finalGradeid"></param>
+        /// <param name="finalGradeId"></param>
         /// <returns></returns>
         [Authorize]
-        [HttpGet("{finalGradeid}")]
-        public async Task<ActionResult<FinalGradeDto>> GetFinalGradeById(Guid finalGradeid)
+        [HttpGet("{finalGradeId}")]
+        public async Task<ActionResult<FinalGradeDto>> GetFinalGradeById(Guid finalGradeId)
         {
-            var finalGrade = await _context.FinalGrade
-                .Where(fg => fg.FinalGradeId == finalGradeid)
-                .Include(fg => fg.Subject)
-                .Include(fg => fg.Student)
-                    .ThenInclude(s => s.User)
-                .Select(fg => new FinalGradeDto
-                {
-                    FinalGradeId = fg.FinalGradeId,
-                    StudentId = fg.StudentId,
-                    SubjectId = fg.SubjectId,
-                    SubjectName = fg.Subject.Name,
-                    PeriodType = fg.PeriodType,
-                    Quarter = fg.Quarter,
-                    GradeValue = fg.GradeValue,
-                    Student = new StudentForGradeDto
-                    {
-                        StudentId = fg.Student.StudentId,
-                        Name = fg.Student.User.Name,
-                    }
-                })
-                .FirstOrDefaultAsync();
+            var finalGrade = await _finalGradeRepository.GetById(finalGradeId);
 
             if (finalGrade == null)
             {
@@ -111,34 +87,14 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet("FinalGradeByStudentId/{studentId}")]
         public async Task<ActionResult<IEnumerable<FinalGradeDto>>> GetFinalGradeByStudent(Guid studentId)
         {
-            var finalGrade = await _context.FinalGrade
-                .Where(fg => fg.StudentId == studentId)
-                .Include(fg => fg.Subject)
-                .Include(fg => fg.Student)
-                    .ThenInclude(s => s.User)
-                .Select(fg => new FinalGradeDto
-                {
-                    FinalGradeId = fg.FinalGradeId,
-                    StudentId = fg.StudentId,
-                    SubjectId = fg.SubjectId,
-                    SubjectName = fg.Subject.Name,
-                    PeriodType = fg.PeriodType,
-                    Quarter = fg.Quarter,
-                    GradeValue = fg.GradeValue,
-                    Student = new StudentForGradeDto
-                    {
-                        StudentId = fg.Student.StudentId,
-                        Name = fg.Student.User.Name,
-                    }
-                })
-                .ToListAsync();
+            var finalGrades = await _finalGradeRepository.GetByStudentId(studentId);
 
-            if (finalGrade == null)
+            if (finalGrades == null)
             {
                 return NotFound();
             }
 
-            return finalGrade;
+            return Ok(finalGrades);
         }
 
         /// <summary>
@@ -154,26 +110,28 @@ namespace MyWebApplicationServer.Controllers
             {
                 return BadRequest("Для четверти должен быть указан номер от 1 до 4");
             }
-            var studentExists = await _context.Student.AnyAsync(s => s.StudentId == createFinalGradeDto.StudentId);
-            var subjectExists = await _context.Subject.AnyAsync(s => s.SubjectId == createFinalGradeDto.SubjectId);
 
-            if (!studentExists)
+            var student = await _studentRepository.GetById(createFinalGradeDto.StudentId);
+
+            if (student == null)
             {
                 return NotFound("Такого студента не существует!");
             }
-            if (!subjectExists)
+
+            var subject = await _subjectRepository.GetById(createFinalGradeDto.SubjectId);
+            if (subject == null)
             {
                 return NotFound("Такого предмета не существует");
             }
 
-            var existingGrade = await _context.FinalGrade
-                .FirstOrDefaultAsync(fg =>
-                    fg.StudentId == createFinalGradeDto.StudentId &&
-                    fg.SubjectId == createFinalGradeDto.SubjectId &&
-                    fg.PeriodType == createFinalGradeDto.PeriodType &&
-                    fg.Quarter == createFinalGradeDto.Quarter);
+            var existingGrade = await _finalGradeRepository
+                .CheckExistingGrade(
+                createFinalGradeDto.StudentId,
+                createFinalGradeDto.SubjectId, 
+                createFinalGradeDto.PeriodType, 
+                createFinalGradeDto.Quarter);
 
-            if (existingGrade != null)
+            if (existingGrade)
             {
                 return Conflict("Итоговая оценка для указанного периода уже существует");
             }
@@ -187,8 +145,7 @@ namespace MyWebApplicationServer.Controllers
                 GradeValue = createFinalGradeDto.GradeValue
             };
 
-            _context.FinalGrade.Add(finalGrade);
-            await _context.SaveChangesAsync();
+            await _finalGradeRepository.Add(finalGrade);
 
             return CreatedAtAction(nameof(GetFinalGrade), new { id = finalGrade.FinalGradeId }, finalGrade);
         }
