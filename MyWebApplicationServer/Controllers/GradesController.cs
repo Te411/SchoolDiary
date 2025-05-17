@@ -11,6 +11,7 @@ using MyWebApplicationServer.Data;
 using MyWebApplicationServer.DTOs.Grade;
 using MyWebApplicationServer.DTOs.Student;
 using MyWebApplicationServer.DTOs.Subject;
+using MyWebApplicationServer.Interfaces;
 using Project.MyWebApplicationServer.Models;
 
 namespace MyWebApplicationServer.Controllers
@@ -22,15 +23,22 @@ namespace MyWebApplicationServer.Controllers
     [ApiController]
     public class GradesController : ControllerBase
     {
-        private readonly LibraryContext _context;
+        private readonly IGradeRepository _gradeRepository;
+        private readonly ISubjectRepository _subjectRepository;
+        private readonly IStudentRepository _studentRepository;
 
         /// <summary>
         /// Конструктор
         /// </summary>
-        /// <param name="context"></param>
-        public GradesController(LibraryContext context)
+        /// <param name="gradeRepository"></param>
+        /// <param name="subjectRepository"></param>
+        /// <param name="studentRepository"></param>
+        public GradesController(IGradeRepository gradeRepository, 
+            ISubjectRepository subjectRepository, IStudentRepository studentRepository)
         {
-            _context = context;
+            _gradeRepository = gradeRepository;
+            _subjectRepository = subjectRepository;
+            _studentRepository = studentRepository;
         }
 
         /// <summary>
@@ -41,24 +49,14 @@ namespace MyWebApplicationServer.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GradeDto>>> GetGrade()
         {
-            return await _context.Grade
-                .Include(g => g.Subject)
-                .Include(g => g.Student)
-                    .ThenInclude(s => s.User)
-                .Select(g => new GradeDto
-                {
-                    GradeId = g.GradeId,
-                    SubjectId = g.SubjectId,
-                    SubjectName = g.Subject.Name,
-                    Value = g.Value,
-                    Data = g.Data,
-                    Student = new StudentForGradeDto
-                    {
-                        StudentId = g.Student.StudentId,
-                        Name = g.Student.User.Name,
-                    }
-                })
-                .ToListAsync();
+            var allGrades = await _gradeRepository.GetAll();
+
+            if(allGrades == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(allGrades);
         }
 
         /// <summary>
@@ -68,34 +66,16 @@ namespace MyWebApplicationServer.Controllers
         /// <returns></returns>
         [Authorize]
         [HttpGet("id/{id}")]
-        public async Task<ActionResult<IEnumerable<GradeDto>>> GetGrade(Guid id)
+        public async Task<ActionResult<IEnumerable<GradeDto>>> GetGradeById(Guid id)
         {
-            var grade = await _context.Grade
-                .Where(g=> g.GradeId == id)
-                .Include(g => g.Subject)
-                .Include(g => g.Student)
-                    .ThenInclude(s => s.User)
-                .Select(g => new GradeDto
-                {
-                    GradeId = g.GradeId,
-                    SubjectId = g.SubjectId,
-                    SubjectName = g.Subject.Name,
-                    Value = g.Value,
-                    Data = g.Data,
-                    Student = new StudentForGradeDto
-                    {
-                        StudentId = g.Student.StudentId,
-                        Name = g.Student.User.Name,
-                    }
-                })
-                .ToListAsync();
+            var grade = await _gradeRepository.GetById(id);
 
             if (grade == null)
             {
                 return NotFound();
             }
 
-            return grade;
+            return Ok(grade);
         }
 
         /// <summary>
@@ -105,34 +85,16 @@ namespace MyWebApplicationServer.Controllers
         /// <returns></returns>
         [Authorize]
         [HttpGet("subjectName/{subjectName}")]
-        public async Task<ActionResult<IEnumerable<GradeDto>>> GetGrade(string subjectName)
+        public async Task<ActionResult<IEnumerable<GradeDto>>> GetGradeBySubjectName(string subjectName)
         {
-            var grade = await _context.Grade
-                .Where(g => g.Subject.Name == subjectName)
-                .Include(g => g.Subject)
-                .Include(g => g.Student)
-                    .ThenInclude(s => s.User)
-                .Select(g => new GradeDto
-                {
-                    GradeId = g.GradeId,
-                    SubjectId = g.SubjectId,
-                    SubjectName = g.Subject.Name,
-                    Value = g.Value,
-                    Data = g.Data,
-                    Student = new StudentForGradeDto
-                    {
-                        StudentId = g.Student.StudentId,
-                        Name = g.Student.User.Name,
-                    }
-                })
-                .ToListAsync();
+            var grades = await _gradeRepository.GetBySubjectName(subjectName);
 
-            if (grade == null)
+            if (grades == null)
             {
                 return NotFound();
             }
 
-            return grade;
+            return Ok(grades);
         }
 
         /// <summary>
@@ -144,54 +106,45 @@ namespace MyWebApplicationServer.Controllers
         [HttpPost]
         public async Task<ActionResult<GradeDto>> PostGrade(CreateGradeDto createGradeDto)
         {
-            var subjectExists = await _context.Subject
-                .FirstOrDefaultAsync(s => s.Name == createGradeDto.SubjectName);
+            var subject = await _subjectRepository.GetByNameAsync(createGradeDto.SubjectName);
 
-            if (subjectExists == null)
+            if (subject == null)
             {
                 return BadRequest("Указанный предмет не существует");
             }
 
-            var studentExists = await _context.Student
-                .FirstOrDefaultAsync(s => s.User.Name == createGradeDto.StudentName);
+            var student = await _studentRepository.GetByStudentName(createGradeDto.StudentName);
 
-            if (studentExists == null)
+            if (student == null)
             {
                 return BadRequest("Указанный студент не существует");
             }
 
             var grade = new Grade
             {
-                SubjectId = subjectExists.SubjectId,
-                StudentId = studentExists.StudentId,
+                SubjectId = subject.SubjectId,
+                StudentId = student.StudentId,
                 Value = createGradeDto.Value,
                 Data = createGradeDto.Data
             };
 
-            _context.Grade.Add(grade);
-            await _context.SaveChangesAsync();
+            var createdGrade = await _gradeRepository.Add(grade);
 
-            var createdGrade = await _context.Grade
-                .Where(g => g.GradeId == grade.GradeId)
-                .Include(g => g.Subject)
-                .Include(g => g.Student)
-                    .ThenInclude(s => s.User)
-                .Select(g => new GradeDto
+            var gradeDto = new GradeDto
+            {
+                GradeId = createdGrade.GradeId,
+                SubjectId = createdGrade.SubjectId,
+                SubjectName = subject.Name,
+                Value = createdGrade.Value,
+                Data = createdGrade.Data,
+                Student = new StudentForGradeDto
                 {
-                    GradeId = g.GradeId,
-                    SubjectId = g.SubjectId,
-                    SubjectName = g.Subject.Name,
-                    Value = g.Value,
-                    Data = g.Data,
-                    Student = new StudentForGradeDto
-                    {
-                        StudentId = g.Student.StudentId,
-                        Name = g.Student.User.Name,
-                    },
-                })
-                .FirstOrDefaultAsync();
+                    StudentId = student.StudentId,
+                    Name = student.User.Name,
+                }
+            };
 
-            return CreatedAtAction("GetGrade", new { id = grade.GradeId }, createdGrade);
+            return CreatedAtAction("GetGrade", new { id = gradeDto.GradeId }, gradeDto);
         }
 
         /// <summary>
@@ -203,93 +156,45 @@ namespace MyWebApplicationServer.Controllers
         [HttpPost("GradeAllStudentByClassSubject/")]
         public async Task<ActionResult<IEnumerable<GradeDto>>> GetGradeAllStudentByClassSubject(GradeByClassSubjectDto gradeAllStudent)
         {
-            var grade = await _context.Grade
-                .Where(g => g.SubjectId == gradeAllStudent.SubjectId && g.Student.ClassId == gradeAllStudent.ClassId)
-                .Include(g => g.Student)
-                    .ThenInclude(s => s.User)
-                .Include(g => g.Subject)
-                .Select(g => new GradeDto
-                {
-                    GradeId = g.GradeId,
-                    SubjectId = g.SubjectId,
-                    SubjectName = g.Subject.Name,
-                    Value = g.Value,
-                    Data = g.Data,
-                    Student = new StudentForGradeDto
-                    {
-                        StudentId = g.Student.StudentId,
-                        Name = g.Student.User.Name,
-                    }
-                })
-                .ToListAsync();
+            var grade = await _gradeRepository.GetByClassIdAndSubjectId(gradeAllStudent.ClassId, gradeAllStudent.SubjectId);
 
             if (grade == null)
             {
                 return NotFound();
             }
 
-            return grade;
+            return Ok(grade);
         }
 
         /// <summary>
-        /// Получить все оценки по id студента
+        /// Получить все оценки по ID студента
         /// </summary>
-        /// <param name="StudentId">id студента</param>
+        /// <param name="userId">ID студента</param>
         /// <returns></returns>
         [Authorize]
-        [HttpGet("StudentId/{StudentId}")]
-        public async Task<ActionResult<IEnumerable<SubjectForGradeDto>>> GetGradeByStudentId(Guid StudentId)
+        [HttpGet("userId/{userId}")]
+        public async Task<ActionResult<IEnumerable<SubjectForGradeDto>>> GetGradeByStudentId(Guid userId)
         {
-            var grade = await _context.Grade
-                .Where(g => g.StudentId == StudentId)
-                .Include(g => g.Subject)
-                .Include(g => g.Student)
-                    .ThenInclude(s => s.User)
-                .GroupBy(g => new { g.SubjectId, g.Subject.Name })
-                .Select(g => new SubjectForGradeDto
-                {
-                    Name = g.Key.Name,
-                    SubjectId = g.Key.SubjectId,
-                    grade = g.Select(g => new GradeDto
-                    {
-                        GradeId = g.GradeId,
-                        Value = g.Value,
-                        Data = g.Data,
-                        Student = new StudentForGradeDto
-                        {
-                            StudentId = g.Student.StudentId,
-                            Name = g.Student.User.Name,
-                        }
-                    }).ToList()
-                })
-                .ToListAsync();
+            var grade = await _gradeRepository.GetByUserId(userId);
 
             if (grade == null)
             {
                 return NotFound();
             }
 
-            return grade;
+            return Ok(grade);
         }
 
         /// <summary>
-        /// Удалить оценку по ее id
+        /// Удалить оценку по ее ID
         /// </summary>
-        /// <param name="id">id оценки</param>
+        /// <param name="id">ID оценки</param>
         /// <returns></returns>
         [Authorize(Roles = "Учитель")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGrade(Guid id)
         {
-            var grade = await _context.Grade.FindAsync(id);
-            if (grade == null)
-            {
-                return NotFound();
-            }
-        
-            _context.Grade.Remove(grade);
-            await _context.SaveChangesAsync();
-        
+            await _gradeRepository.Delete(id);
             return NoContent();
         }
     }

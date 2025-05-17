@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyWebApplicationServer.Data;
+using MyWebApplicationServer.DTOs.Grade;
 using MyWebApplicationServer.DTOs.Student;
 using MyWebApplicationServer.DTOs.User;
 using MyWebApplicationServer.Interfaces;
@@ -100,6 +101,17 @@ namespace MyWebApplicationServer.Repositories
                     ClassName = s.Class.Name,
                 })
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Получить студента по имени
+        /// </summary>
+        /// <param name="studentName">имя студента</param>
+        /// <returns></returns>
+        public async Task<Student> GetByStudentName(string studentName)
+        {
+            return await _context.Student
+              .FirstOrDefaultAsync(s => s.User.Name == studentName);
         }
     }
 }
